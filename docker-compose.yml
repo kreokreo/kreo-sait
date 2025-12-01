@@ -3,17 +3,11 @@ version: '3.8'
 services:
   # Продакшен окружение (kreo.pro)
   production:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-      args:
-        BUILD_MODE: production
+    image: kreo-it:production
     container_name: kreo-it-production
     restart: unless-stopped
     ports:
-      - "80:80"
-    volumes:
-      - ./dist-production:/usr/share/nginx/html:ro
+      - "8081:80"
     environment:
       - NODE_ENV=production
     networks:
