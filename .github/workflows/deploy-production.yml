@@ -73,9 +73,9 @@ jobs:
           username: ${{ secrets.PRODUCTION_SERVER_USER }}
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
-          script: |
+            script: |
             cd /opt/kreo-it
-            docker save kreo-it:production > backup-$(date +%Y%m%d-%H%M%S).tar || true
+            docker save kreo-it:production > backup-$(date +%Y%m%d-%H%M%S).tar 2>/dev/null || true
 
       - name: Deploy and restart on server
         uses: appleboy/ssh-action@master
@@ -84,12 +84,12 @@ jobs:
           username: ${{ secrets.PRODUCTION_SERVER_USER }}
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
-          script: |
+            script: |
             cd /opt/kreo-it
             docker load < kreo-it-production.tar.gz
-            docker-compose -f docker-compose.yml stop production || true
-            docker-compose -f docker-compose.yml rm -f production || true
-            docker-compose -f docker-compose.yml up -d production
+            docker compose -f docker-compose.yml stop production || true
+            docker compose -f docker-compose.yml rm -f production || true
+            docker compose -f docker-compose.yml up -d production
             docker system prune -f
 
       - name: Health check
@@ -99,9 +99,9 @@ jobs:
           username: ${{ secrets.PRODUCTION_SERVER_USER }}
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
-          script: |
+            script: |
             sleep 5
-            curl -f http://localhost/health || exit 1
+            curl -f http://localhost:8081/health || exit 1
 
       - name: Rollback on failure
         if: failure()
@@ -111,12 +111,12 @@ jobs:
           username: ${{ secrets.PRODUCTION_SERVER_USER }}
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
-          script: |
+            script: |
             cd /opt/kreo-it
             LATEST_BACKUP=$(ls -t backup-*.tar | head -1)
             if [ -n "$LATEST_BACKUP" ]; then
               docker load < $LATEST_BACKUP
-              docker-compose -f docker-compose.yml up -d production
+              docker compose -f docker-compose.yml up -d production
             fi
 
       - name: Notify success
