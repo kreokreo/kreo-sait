@@ -49,7 +49,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build --build-arg BUILD_MODE=production -t kreo-it:production -t kreo-it:production-${{ github.sha }} .
+          docker build -f docker/Dockerfile --build-arg BUILD_MODE=production -t kreo-it:production -t kreo-it:production-${{ github.sha }} .
 
       - name: Save Docker image
         run: |

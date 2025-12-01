@@ -17,8 +17,11 @@ COPY . .
 # Собираем приложение
 # Режим определяется через build arg
 ARG BUILD_MODE=production
-ENV NODE_ENV=${BUILD_MODE}
-RUN npm run build
+ENV NODE_ENV=production
+ENV VITE_APP_ENV=production
+ENV VITE_APP_URL=https://kreo.pro
+ENV VITE_API_URL=https://api.kreo.pro
+RUN npm run build:${BUILD_MODE}
 
 # Stage 2: Production
 FROM nginx:alpine
