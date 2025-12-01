@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # Продакшен окружение (kreo.pro)
+  production:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        BUILD_MODE: production
+    container_name: kreo-it-production
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./dist-production:/usr/share/nginx/html:ro
+    environment:
+      - NODE_ENV=production
+    networks:
+      - kreo-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  kreo-network:
+    driver: bridge
+
