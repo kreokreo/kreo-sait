@@ -118,7 +118,26 @@ jobs:
             sleep 15
             
             # Проверяем статус контейнера
+            echo "=== Статус контейнера ==="
             docker compose ps landing
+            
+            # Проверяем, что контейнер запущен
+            if ! docker compose ps landing | grep -q "Up"; then
+              echo "❌ Контейнер не запущен!"
+              echo "=== Логи контейнера ==="
+              docker compose logs landing
+              echo "=== Попытка запуска ==="
+              docker compose up -d landing
+              sleep 10
+            fi
+            
+            # Проверяем доступность порта
+            echo "=== Проверка порта 3001 ==="
+            netstat -tlnp | grep 3001 || ss -tlnp | grep 3001 || echo "⚠️  Порт 3001 не слушается"
+            
+            # Проверяем доступность приложения изнутри контейнера
+            echo "=== Проверка изнутри контейнера ==="
+            docker exec kreo-it-production wget -q -O- http://localhost:3000 || echo "⚠️  Приложение не отвечает внутри контейнера"
             
             # Обновление Nginx конфигурации
             if [ -f nginx-production.conf ]; then
@@ -139,28 +158,57 @@ jobs:
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
           script: |
             sleep 20
+            
             # Проверяем статус контейнера
             echo "=== Статус контейнера ==="
             docker compose ps landing
             
+            # Проверяем, что контейнер запущен
+            if ! docker compose ps landing | grep -q "Up"; then
+              echo "❌ Контейнер не запущен!"
+              echo "=== Полные логи контейнера ==="
+              docker compose logs landing
+              exit 1
+            fi
+            
             # Проверяем логи контейнера
             echo "=== Последние логи контейнера ==="
-            docker compose logs landing --tail 30
+            docker compose logs landing --tail 50
+            
+            # Проверяем доступность порта
+            echo "=== Проверка порта 3001 ==="
+            netstat -tlnp 2>/dev/null | grep 3001 || ss -tlnp 2>/dev/null | grep 3001 || echo "⚠️  Порт 3001 не слушается"
             
             # Проверяем доступность приложения
             echo "=== Проверка доступности ==="
-            for i in {1..5}; do
-              if curl -f -s http://localhost:3001 > /dev/null 2>&1; then
-                echo "✅ Приложение доступно!"
+            for i in {1..10}; do
+              if curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1; then
+                echo "✅ Приложение доступно на порту 3001!"
+                # Дополнительная проверка через Nginx
+                if curl -f -s -m 5 http://localhost/health > /dev/null 2>&1 || curl -f -s -m 5 https://kreo.pro/health > /dev/null 2>&1; then
+                  echo "✅ Приложение доступно через Nginx!"
+                  exit 0
+                else
+                  echo "⚠️  Приложение работает, но Nginx не проксирует"
+                fi
                 exit 0
               fi
-              echo "Попытка $i/5: приложение еще не готово, ждем..."
-              sleep 5
+              echo "Попытка $i/10: приложение еще не готово, ждем..."
+              sleep 3
             done
             
-            echo "❌ Health check failed после 5 попыток"
+            echo "❌ Health check failed после 10 попыток"
+            echo "=== Диагностика ==="
+            echo "Статус контейнера:"
+            docker compose ps landing
+            echo "Порт 3001:"
+            netstat -tlnp 2>/dev/null | grep 3001 || ss -tlnp 2>/dev/null | grep 3001 || echo "Порт не слушается"
+            echo "Проверка изнутри контейнера:"
+            docker exec kreo-it-production wget -q -O- http://localhost:3000 2>&1 || echo "Не отвечает"
             echo "=== Полные логи контейнера ==="
             docker compose logs landing
+            echo "=== Логи Nginx ==="
+            sudo tail -20 /var/log/nginx/kreo.pro.error.log 2>/dev/null || echo "Логи Nginx недоступны"
             exit 1
 
       - name: Rollback on failure
