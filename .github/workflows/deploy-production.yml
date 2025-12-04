@@ -85,7 +85,12 @@ jobs:
             docker stop kreo-it-production 2>/dev/null || true
             docker rm -f kreo-it-production 2>/dev/null || true
             
-            # Запуск нового контейнера
+            # Остановка и удаление старого контейнера
+            docker stop kreo-it-production 2>/dev/null || true
+            docker rm -f kreo-it-production 2>/dev/null || true
+            
+            # Запуск нового контейнера с проверкой
+            echo "Запуск контейнера..."
             docker run -d \
               --name kreo-it-production \
               --restart unless-stopped \
@@ -93,6 +98,29 @@ jobs:
               -e NODE_ENV=production \
               -e PORT=3000 \
               kreo-it:production
+            
+            # Ждем запуска
+            echo "Ожидание запуска контейнера (15 секунд)..."
+            sleep 15
+            
+            # Проверяем статус
+            echo "=== Статус контейнера ==="
+            docker ps | grep kreo-it-production || echo "❌ Контейнер не запущен!"
+            
+            # Проверяем логи
+            echo "=== Логи контейнера (последние 30 строк) ==="
+            docker logs kreo-it-production --tail 30 || echo "Логи недоступны"
+            
+            # Проверяем доступность
+            echo "=== Проверка доступности ==="
+            for i in {1..5}; do
+              if curl -f -s -m 3 http://localhost:3001 > /dev/null 2>&1; then
+                echo "✅ Приложение доступно на порту 3001!"
+                break
+              fi
+              echo "Попытка $i/5: ждем..."
+              sleep 3
+            done
             
             # Обновление Nginx
             if [ -f nginx-production.conf ]; then
