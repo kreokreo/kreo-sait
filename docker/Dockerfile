@@ -64,5 +64,19 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NODE_ENV=production
 
-# Проверяем наличие server.js перед запуском
-CMD ["sh", "-c", "if [ -f server.js ]; then node server.js; else echo 'ERROR: server.js not found!' && ls -la && exit 1; fi"]
+# Проверяем наличие server.js перед запуском и выводим информацию
+CMD ["sh", "-c", "echo '=== Запуск Next.js приложения ===' && \
+     echo 'Рабочая директория:' && pwd && \
+     echo 'Содержимое /app:' && ls -la && \
+     echo 'Проверка server.js:' && \
+     if [ -f server.js ]; then \
+       echo '✅ server.js найден, запускаем...' && \
+       node server.js; \
+     else \
+       echo '❌ ERROR: server.js not found!' && \
+       echo 'Содержимое директории:' && \
+       ls -la && \
+       echo 'Поиск server.js:' && \
+       find . -name 'server.js' 2>/dev/null || echo 'server.js не найден' && \
+       exit 1; \
+     fi"]

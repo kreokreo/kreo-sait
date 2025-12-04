@@ -167,13 +167,31 @@ jobs:
             if ! curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1; then
               echo ""
               echo "❌ Приложение НЕ доступно после 10 попыток!"
+              echo ""
               echo "=== Детальная диагностика ==="
-              echo "Статус контейнера:"
-              docker inspect kreo-it-production --format='{{.State.Status}}' 2>&1
-              echo "Логи (полные):"
+              echo ""
+              echo "Статус контейнера (inspect):"
+              docker inspect kreo-it-production --format='Status: {{.State.Status}}, Running: {{.State.Running}}, ExitCode: {{.State.ExitCode}}, Error: {{.State.Error}}' 2>&1 || echo "Не удалось получить статус"
+              echo ""
+              echo "Все логи контейнера (последние 100 строк):"
               docker logs kreo-it-production 2>&1 | tail -100
+              echo ""
+              echo "Проверка порта 3001 на хосте:"
+              netstat -tlnp 2>/dev/null | grep 3001 || ss -tlnp 2>/dev/null | grep 3001 || echo "Порт 3001 не слушается"
+              echo ""
+              echo "Проверка доступности через curl (verbose):"
+              curl -v http://localhost:3001 2>&1 | head -30
+              echo ""
+              echo "Проверка Nginx конфигурации:"
+              sudo nginx -t 2>&1
+              echo ""
+              echo "Ошибки Nginx:"
+              sudo tail -20 /var/log/nginx/kreo.pro.error.log 2>/dev/null || echo "Логи Nginx недоступны"
               exit 1
             fi
+            
+            echo ""
+            echo "✅ Приложение успешно запущено и доступно!"
             
             # Обновление Nginx
             if [ -f nginx-production.conf ]; then
