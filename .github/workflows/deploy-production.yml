@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.PRODUCTION_SERVER_USER }}
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
-          source: "kreo-it-production.tar.gz,docker-compose.yml"
+          source: "kreo-it-production.tar.gz,docker-compose.yml,docker/nginx-production.conf"
           strip_components: 0
           target: "/opt/kreo-it/"
           overwrite: true
@@ -104,6 +104,15 @@ jobs:
             docker compose stop landing || true
             docker compose rm -f landing || true
             docker compose up -d landing
+            sleep 10
+            # Обновление Nginx конфигурации
+            if [ -f nginx-production.conf ]; then
+              cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
+              if [ ! -L /etc/nginx/sites-enabled/kreo.pro ]; then
+                ln -s /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
+              fi
+              nginx -t && systemctl reload nginx || echo "⚠️  Ошибка перезагрузки Nginx"
+            fi
             docker system prune -f
 
       - name: Health check

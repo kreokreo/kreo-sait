@@ -91,6 +91,19 @@ fi
 echo -e "${GREEN}✅ Файлы скопированы${NC}"
 echo ""
 
+echo -e "${BLUE}📋 Шаг 4.1: Копирование Nginx конфигурации...${NC}"
+scp -i "$SERVER_SSH_KEY" -P "$SERVER_PORT" \
+    docker/nginx-production.conf \
+    "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/"
+
+if [ $? -ne 0 ]; then
+    echo -e "${YELLOW}⚠️  Предупреждение: Не удалось скопировать Nginx конфигурацию${NC}"
+    echo "   Продолжаем деплой, но Nginx не будет обновлен"
+else
+    echo -e "${GREEN}✅ Nginx конфигурация скопирована${NC}"
+fi
+echo ""
+
 echo -e "${BLUE}🚀 Шаг 5: Деплой на сервере...${NC}"
 ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     set -e
@@ -106,12 +119,26 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     echo "Запуск нового контейнера..."
     docker compose up -d landing
     
+    echo "Ожидание запуска контейнера..."
+    sleep 10
+    
+    echo "Проверка статуса контейнера..."
+    docker compose ps landing
+    
+    echo "Обновление Nginx конфигурации..."
+    if [ -f nginx-production.conf ]; then
+        sudo cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
+        if [ ! -L /etc/nginx/sites-enabled/kreo.pro ]; then
+            sudo ln -s /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
+        fi
+        echo "Проверка конфигурации Nginx..."
+        sudo nginx -t && sudo systemctl reload nginx || echo "⚠️  Ошибка перезагрузки Nginx"
+    else
+        echo "⚠️  Nginx конфигурация не найдена, пропускаем обновление"
+    fi
+    
     echo "Очистка старых образов..."
     docker system prune -f
-    
-    echo "Проверка статуса..."
-    sleep 5
-    docker compose ps landing
 EOF
 
 if [ $? -ne 0 ]; then
