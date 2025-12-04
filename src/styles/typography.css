@@ -1,0 +1,47 @@
+/* Типографика в минималистичном стиле (как Selfler) */
+
+/* Заголовки - более минималистичные, больше spacing */
+h1 {
+    @apply text-5xl md:text-7xl font-bold tracking-tight leading-[1.1];
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    @apply text-4xl md:text-5xl font-bold tracking-tight leading-tight;
+    letter-spacing: -0.01em;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+    letter-spacing: -0.01em;
+  }
+
+  h4 {
+    @apply text-xl md:text-2xl font-semibold;
+  }
+
+  h5 {
+    @apply text-lg md:text-xl font-semibold;
+  }
+
+  h6 {
+    @apply text-base md:text-lg font-semibold;
+  }
+
+  /* Параграфы - больше line-height для читаемости */
+  p {
+    @apply text-base md:text-lg leading-relaxed;
+    color: hsl(0, 0%, 40%);
+  }
+
+  /* Ссылки */
+  a {
+    @apply transition-colors;
+  }
+
+/* Моноширинный текст (для меток, кодов) - более минималистичный */
+.font-mono {
+  @apply font-mono text-xs md:text-sm tracking-wide;
+  color: hsl(0, 0%, 50%);
+}
+

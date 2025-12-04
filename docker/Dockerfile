@@ -1,40 +1,50 @@
-# Multi-stage build для оптимизации размера образа
+# Multi-stage build для Next.js
 
-# Stage 1: Builder
-FROM node:18-alpine AS builder
-
+# Stage 1: Dependencies
+FROM node:18-alpine AS deps
 WORKDIR /app
 
 # Копируем файлы зависимостей
 COPY package*.json ./
+RUN npm ci
 
-# Устанавливаем зависимости
-RUN npm ci --only=production=false
+# Stage 2: Builder
+FROM node:18-alpine AS builder
+WORKDIR /app
 
-# Копируем исходный код
+# Копируем зависимости из deps
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Собираем приложение
-# Режим определяется через build arg
-ARG BUILD_MODE=production
+# Переменные окружения для сборки
 ENV NODE_ENV=production
-ENV VITE_APP_ENV=production
-ENV VITE_APP_URL=https://kreo.pro
-ENV VITE_API_URL=https://api.kreo.pro
-RUN npm run build:${BUILD_MODE}
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Stage 2: Production
-FROM nginx:alpine
+# Собираем Next.js приложение
+# Включаем standalone режим для оптимизации
+RUN npm run build
 
-# Копируем собранное приложение из builder
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Stage 3: Runner
+FROM node:18-alpine AS runner
+WORKDIR /app
 
-# Копируем конфигурацию Nginx
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Открываем порт 80
-EXPOSE 80
+# Создаем пользователя без root прав
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Запускаем Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Копируем standalone build из builder
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

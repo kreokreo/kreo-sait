@@ -1,0 +1,316 @@
+
+
+{
+  "project": {
+    "name": "KREO",
+    "domain": "kreo.pro",
+    "slogan": "Делаем IT-продукты, которые приносят результат"
+  },
+
+  "sitemap": [
+    {
+      "path": "/",
+      "title": "Главная",
+      "description": "Hero-секция со слоганом и CTA, обзор услуг (2 направления), цифры компании, целевые аудитории (включая релокантов), превью кейсов, видео-отзывы, сертификаты партнёров, фото команды, география работы, финальный CTA с квизом"
+    },
+
+    {
+      "path": "/uslugi",
+      "title": "Услуги",
+      "description": "Хаб всех услуг с разделением на два направления: Реклама и IT-разработка",
+      "children": [
+        {
+          "path": "/uslugi/reklama",
+          "title": "Реклама",
+          "description": "Хаб рекламных услуг со списком всех каналов и ценами, CTA на квиз подбора рекламы",
+          "children": [
+            {
+              "path": "/uslugi/reklama/vkontakte",
+              "title": "Реклама ВКонтакте",
+              "description": "Описание услуги, кому подходит, что входит, калькулятор, кейсы по VK, FAQ, квиз",
+              "price_from": 55000
+            },
+            {
+              "path": "/uslugi/reklama/yandex-direct",
+              "title": "Яндекс Директ",
+              "description": "Описание услуги, кому подходит, что входит, калькулятор, кейсы по Директу, FAQ, квиз",
+              "price_from": 60000
+            },
+            {
+              "path": "/uslugi/reklama/seo-prodvizhenie",
+              "title": "SEO-продвижение",
+              "description": "Описание услуги, кому подходит, этапы работы, кейсы по SEO, FAQ, квиз",
+              "price_from": 80000
+            },
+            {
+              "path": "/uslugi/reklama/avito",
+              "title": "Продвижение на Авито",
+              "description": "Описание услуги, кому подходит, что входит, калькулятор, кейсы, FAQ, квиз",
+              "price_from": 60000
+            },
+            {
+              "path": "/uslugi/reklama/telegram-ads",
+              "title": "Telegram Ads",
+              "description": "Описание услуги, кому подходит, что входит, калькулятор, кейсы, FAQ, квиз",
+              "price_from": 40000
+            },
+            {
+              "path": "/uslugi/reklama/google-ads",
+              "title": "Google Ads",
+              "description": "Описание услуги, кому подходит (СНГ, зарубеж), что входит, калькулятор, кейсы, FAQ, квиз",
+              "price_from": 90000
+            },
+            {
+              "path": "/uslugi/reklama/facebook-instagram",
+              "title": "Facebook и Instagram",
+              "description": "Описание услуги, кому подходит, что входит, калькулятор, кейсы, FAQ, квиз",
+              "price_from": 80000
+            },
+            {
+              "path": "/uslugi/reklama/tiktok",
+              "title": "TikTok реклама",
+              "description": "Описание услуги, кому подходит, что входит, калькулятор, кейсы, FAQ, квиз",
+              "price_from": 80000
+            },
+            {
+              "path": "/uslugi/reklama/ai-prozvony",
+              "title": "AI-прозвоны по базе",
+              "description": "Описание услуги, сценарии использования, кому подходит, кейсы, FAQ, квиз",
+              "price_from": 110000
+            }
+          ]
+        },
+        {
+          "path": "/uslugi/razrabotka",
+          "title": "IT-разработка",
+          "description": "Хаб услуг по разработке со списком всех услуг и ценами, CTA на квиз",
+          "children": [
+            {
+              "path": "/uslugi/razrabotka/chat-boty",
+              "title": "Разработка чат-ботов",
+              "description": "Описание, платформы (TG, WA, VK), сценарии использования, процесс разработки, кейсы, FAQ, квиз",
+              "price_from": 100000
+            },
+            {
+              "path": "/uslugi/razrabotka/sajt-na-tilde",
+              "title": "Сайт на Tilda",
+              "description": "Типы сайтов, что входит, процесс, кейсы, FAQ, квиз",
+              "price_from": 100000
+            },
+            {
+              "path": "/uslugi/razrabotka/sajt-samopisnyj",
+              "title": "Самописный сайт",
+              "description": "Когда нужен, технологии, этапы разработки, кейсы, FAQ, квиз",
+              "price_from": 500000
+            },
+            {
+              "path": "/uslugi/razrabotka/ai-avtomatizaciya",
+              "title": "AI-автоматизация",
+              "description": "Что можно автоматизировать, примеры решений, технологии, кейсы, FAQ, квиз",
+              "price_from": 250000
+            },
+            {
+              "path": "/uslugi/razrabotka/personalnaya-it-razrabotka",
+              "title": "Персональная IT-разработка",
+              "description": "Что разрабатываем (веб-приложения, сервисы, MVP), процесс работы, кейсы, FAQ, квиз",
+              "price_from": 800000
+            },
+            {
+              "path": "/uslugi/razrabotka/crm-nastrojka",
+              "title": "Настройка CRM",
+              "description": "amoCRM и Bitrix24, что входит, процесс внедрения, кейсы, FAQ, квиз",
+              "price_from": 60000
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "path": "/kejsy",
+      "title": "Кейсы",
+      "description": "Список всех кейсов с фильтрацией по направлениям (реклама/разработка), географии (включая Дубай/Бали), типу клиента (включая релокантов), превью с результатами",
+      "children": [
+        {
+          "path": "/kejsy/[slug]",
+          "title": "Страница кейса",
+          "description": "Клиент/ниша, задача, решение, результаты в цифрах, скриншоты/галерея, отзыв клиента, география проекта, CTA"
+        }
+      ]
+    },
+
+    {
+      "path": "/o-kompanii",
+      "title": "О компании",
+      "description": "История и миссия, подход к работе, фото команды, цифры и достижения, целевые аудитории (бизнес, стартапы, релоканты, e-commerce), сертификаты партнёров, география работы (включая опыт работы с релокантами в Дубай/Бали), CTA"
+    },
+
+    {
+      "path": "/blog",
+      "title": "Блог",
+      "description": "Список статей с фильтрацией по категориям (реклама, разработка, AI, тренды), поиск",
+      "children": [
+        {
+          "path": "/blog/[slug]",
+          "title": "Статья блога",
+          "description": "Контент статьи, автор, связанные услуги, похожие статьи, CTA"
+        }
+      ]
+    },
+
+    {
+      "path": "/kontakty",
+      "title": "Контакты",
+      "description": "Форма обратной связи, телефон, email, мессенджеры, юридическая информация"
+    },
+
+    {
+      "path": "/otzyvy",
+      "title": "Отзывы",
+      "description": "Страница со всеми отзывами клиентов: видео-отзывы, текстовые отзывы, фото клиентов, результаты проектов, фильтрация по услугам",
+      "seo_keywords": ["отзывы kreo", "отзывы digital agency", "результаты работы"]
+    },
+
+    {
+      "path": "/faq",
+      "title": "Частые вопросы",
+      "description": "FAQ страница с категориями: общие вопросы, вопросы по услугам, вопросы для релокантов, технические вопросы, поиск по вопросам",
+      "seo_keywords": ["faq kreo", "часто задаваемые вопросы", "вопросы о digital agency"]
+    },
+
+    {
+      "path": "/geografiya",
+      "title": "География работы",
+      "description": "Страница с картой и списком стран/городов где работаем: Россия, СНГ, Дубай/ОАЭ, Бали/Индонезия, другие страны, кейсы по географии, локальные особенности рынков, опыт работы с международными клиентами",
+      "seo_keywords": ["digital agency дубай", "маркетинг бали", "реклама оаэ", "digital agency россия", "маркетинг снг"]
+    },
+
+    {
+      "path": "/partnerstvo",
+      "title": "Партнёрство",
+      "description": "Сертификаты партнёров, логотипы компаний, программы партнёрства, CTA для партнёров"
+    },
+
+    {
+      "path": "/lichniy-kabinet",
+      "title": "Личный кабинет",
+      "status": "future",
+      "description": "Авторизация клиентов, дашборд с проектами",
+      "children": [
+        {
+          "path": "/lichniy-kabinet/proekty",
+          "title": "Мои проекты",
+          "description": "Список проектов клиента со статусами"
+        },
+        {
+          "path": "/lichniy-kabinet/proekty/[id]",
+          "title": "Проект",
+          "description": "Статус проекта, задачи, отчёты, файлы, комментарии"
+        },
+        {
+          "path": "/lichniy-kabinet/dokumenty",
+          "title": "Документы",
+          "description": "Договоры, счета, акты"
+        }
+      ]
+    },
+
+    {
+      "path": "/politika-konfidencialnosti",
+      "title": "Политика конфиденциальности",
+      "description": "Юридический документ о сборе и обработке персональных данных"
+    },
+
+    {
+      "path": "/polzovatelskoe-soglashenie",
+      "title": "Пользовательское соглашение",
+      "description": "Юридический документ с условиями использования сайта и услуг"
+    },
+
+    {
+      "path": "/404",
+      "title": "Страница не найдена",
+      "description": "Сообщение об ошибке, ссылка на главную"
+    },
+
+    {
+      "path": "/spasibo",
+      "title": "Спасибо за заявку",
+      "description": "Подтверждение отправки заявки, информация о сроках ответа"
+    }
+  ],
+
+  "quizzes": [
+    {
+      "id": "general",
+      "title": "Обсудить проект",
+      "usage": "Главная, контакты, о компании"
+    },
+    {
+      "id": "advertising",
+      "title": "Подобрать рекламу",
+      "usage": "Страницы рекламных услуг"
+    },
+    {
+      "id": "website",
+      "title": "Заказать сайт",
+      "usage": "Страницы разработки сайтов"
+    },
+    {
+      "id": "development",
+      "title": "Заказать разработку",
+      "usage": "Страницы IT-разработки"
+    },
+    {
+      "id": "crm",
+      "title": "Настройка CRM",
+      "usage": "Страница CRM"
+    }
+  ],
+
+  "total_pages": {
+    "main": 9,
+    "services": 17,
+    "cases": "динамически",
+    "blog": "динамически",
+    "cabinet": 3,
+    "utility": 4,
+    "seo_pages": 3
+  },
+
+  "seo_recommendations": {
+    "priority_pages": [
+      "/uslugi/reklama/google-ads",
+      "/uslugi/razrabotka/ai-avtomatizaciya",
+      "/geografiya",
+      "/faq",
+      "/kejsy"
+    ],
+    "target_audiences": [
+      "Предприниматели и бизнес",
+      "Стартапы и IT-компании",
+      "E-commerce и маркетплейсы",
+      "Релоканты и экспаты (одна из аудиторий)",
+      "Международные компании"
+    ],
+    "local_seo": {
+      "russia": {
+        "pages": ["/geografiya", "/kejsy", "/uslugi"],
+        "keywords": ["digital agency россия", "маркетинг россия", "seo продвижение"]
+      },
+      "cis": {
+        "pages": ["/geografiya", "/kejsy", "/uslugi"],
+        "keywords": ["digital agency снг", "маркетинг снг", "реклама снг"]
+      },
+      "dubai": {
+        "pages": ["/geografiya", "/kejsy", "/blog"],
+        "keywords": ["digital agency дубай", "маркетинг дубай", "seo дубай"]
+      },
+      "bali": {
+        "pages": ["/geografiya", "/kejsy", "/blog"],
+        "keywords": ["digital agency бали", "маркетинг бали", "разработка сайта бали"]
+      }
+    }
+  }
+}
+```

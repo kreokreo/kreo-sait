@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react';
 
 export default function CustomCursor() {
@@ -41,18 +43,15 @@ export default function CustomCursor() {
     }
 
     return (
-        <>
-            {/* Основной курсор - точка */}
-            <div
-                                className="fixed w-3 h-3 bg-red-600 rounded-full pointer-events-none z-[9999]"
-                                style={{
-                                    left: position.x - 6,
-                                    top: position.y - 6,
-                                    opacity: isVisible ? 1 : 0,
-                                    transform: isPointer ? 'scale(1.5)' : 'scale(1)',
-                                    transition: 'transform 0.15s ease-out, opacity 0.15s ease-out',
-                                }}
-                            />
-        </>
+        <div
+            className="fixed w-3 h-3 bg-red-600 rounded-full pointer-events-none z-[9999]"
+            style={{
+                left: position.x - 6,
+                top: position.y - 6,
+                opacity: isVisible ? 1 : 0,
+                transform: isPointer ? 'scale(1.5)' : 'scale(1)',
+                transition: 'transform 0.15s ease-out, opacity 0.15s ease-out',
+            }}
+        />
     );
 }

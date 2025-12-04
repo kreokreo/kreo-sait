@@ -31,11 +31,11 @@ jobs:
         continue-on-error: true
 
       - name: Build for production
-        run: npm run build:production
+        run: npm run build
         env:
-          VITE_APP_ENV: production
-          VITE_APP_URL: https://kreo.pro
-          VITE_API_URL: https://api.kreo.pro
+          NODE_ENV: production
+          NEXT_PUBLIC_APP_URL: https://kreo.pro
+          NEXT_PUBLIC_API_URL: https://api.kreo.pro
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -49,7 +49,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -f docker/Dockerfile --build-arg BUILD_MODE=production -t kreo-it:production -t kreo-it:production-${{ github.sha }} .
+          docker build -f docker/Dockerfile -t kreo-it:production -t kreo-it:production-${{ github.sha }} .
 
       - name: Save Docker image
         run: |
@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.PRODUCTION_SERVER_USER }}
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
-          source: "kreo-it-production.tar.gz,docker-compose.yml,docker/nginx-production.conf"
+          source: "kreo-it-production.tar.gz,docker-compose.yml"
           strip_components: 0
           target: "/opt/kreo-it/"
           overwrite: true
@@ -76,7 +76,7 @@ jobs:
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
           script: |
             cd /opt/kreo-it
-            ls -lh kreo-it-production.tar.gz docker-compose.yml docker/nginx-production.conf
+            ls -lh kreo-it-production.tar.gz docker-compose.yml
             echo "Checking docker-compose.yml content:"
             grep -A 2 "image:" docker-compose.yml || echo "ERROR: docker-compose.yml not updated!"
 
@@ -100,10 +100,10 @@ jobs:
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
           script: |
             cd /opt/kreo-it
-            docker load < kreo-it-production.tar.gz
-            docker compose -f docker-compose.yml stop production || true
-            docker compose -f docker-compose.yml rm -f production || true
-            docker compose -f docker-compose.yml up -d production
+            docker load < kreo-it-production.tar.gz || true
+            docker compose stop landing || true
+            docker compose rm -f landing || true
+            docker compose up -d landing
             docker system prune -f
 
       - name: Health check
@@ -114,8 +114,8 @@ jobs:
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
           script: |
-            sleep 5
-            curl -f http://localhost:8081/health || exit 1
+            sleep 10
+            curl -f http://localhost:3001 || exit 1
 
       - name: Rollback on failure
         if: failure()
@@ -127,10 +127,10 @@ jobs:
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
           script: |
             cd /opt/kreo-it
-            LATEST_BACKUP=$(ls -t backup-*.tar | head -1)
+            LATEST_BACKUP=$(ls -t backup-*.tar 2>/dev/null | head -1)
             if [ -n "$LATEST_BACKUP" ]; then
               docker load < $LATEST_BACKUP
-              docker compose -f docker-compose.yml up -d production
+              docker compose up -d landing
             fi
 
       - name: Notify success
