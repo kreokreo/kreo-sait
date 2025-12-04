@@ -203,7 +203,7 @@ jobs:
             # Очистка старых образов
             docker image prune -f
 
-      - name: Health check
+      - name: Health check and diagnostics
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.PRODUCTION_SERVER_HOST }}
@@ -211,18 +211,71 @@ jobs:
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
           script: |
-            sleep 10
+            echo "=== Health Check через 15 секунд после деплоя ==="
+            sleep 15
+            
+            echo ""
+            echo "=== Статус контейнера ==="
+            docker ps -a | grep kreo-it-production || echo "❌ Контейнер не найден!"
+            
+            echo ""
+            echo "=== Детальный статус контейнера ==="
+            docker inspect kreo-it-production --format='Status: {{.State.Status}}, Running: {{.State.Running}}, ExitCode: {{.State.ExitCode}}, StartedAt: {{.State.StartedAt}}' 2>&1 || echo "Не удалось получить статус"
+            
+            echo ""
+            echo "=== Логи контейнера (последние 50 строк) ==="
+            docker logs kreo-it-production --tail 50 2>&1 || echo "Логи недоступны"
+            
+            echo ""
+            echo "=== Проверка порта 3001 на хосте ==="
+            netstat -tlnp 2>/dev/null | grep 3001 || ss -tlnp 2>/dev/null | grep 3001 || echo "❌ Порт 3001 не слушается"
+            
+            echo ""
+            echo "=== Проверка доступности localhost:3001 ==="
             for i in {1..5}; do
-              if curl -f -s -m 3 http://localhost:3001 > /dev/null 2>&1; then
-                echo "✅ Приложение доступно!"
-                exit 0
+              if curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1; then
+                echo "✅ Приложение доступно на localhost:3001 (попытка $i)"
+                break
               fi
-              sleep 2
+              echo "Попытка $i/5: приложение еще не готово..."
+              sleep 3
             done
-            echo "❌ Health check failed"
-            docker ps | grep kreo-it-production
-            docker logs kreo-it-production --tail 20
-            exit 1
+            
+            echo ""
+            echo "=== Проверка процессов в контейнере ==="
+            docker exec kreo-it-production ps aux 2>&1 | head -10 || echo "Не удалось проверить процессы (контейнер может быть остановлен)"
+            
+            echo ""
+            echo "=== Проверка порта 3000 внутри контейнера ==="
+            docker exec kreo-it-production netstat -tlnp 2>&1 | grep 3000 || docker exec kreo-it-production ss -tlnp 2>&1 | grep 3000 || echo "Порт 3000 не слушается внутри контейнера"
+            
+            echo ""
+            echo "=== Ошибки Nginx (последние 30 строк) ==="
+            sudo tail -30 /var/log/nginx/kreo.pro.error.log 2>/dev/null || echo "Логи Nginx недоступны"
+            
+            echo ""
+            echo "=== Access логи Nginx (последние 10 строк) ==="
+            sudo tail -10 /var/log/nginx/kreo.pro.access.log 2>/dev/null || echo "Access логи недоступны"
+            
+            echo ""
+            echo "=== Проверка доступности через Nginx ==="
+            curl -v -H "Host: kreo.pro" http://127.0.0.1 2>&1 | head -30 || echo "Не удалось проверить через Nginx"
+            
+            echo ""
+            echo "=== Финальная проверка health ==="
+            if curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1; then
+              echo "✅ Health check пройден!"
+            else
+              echo "❌ Health check провален!"
+              echo ""
+              echo "=== Дополнительная диагностика ==="
+              echo "Статус контейнера:"
+              docker ps -a | grep kreo-it-production
+              echo ""
+              echo "Последние логи:"
+              docker logs kreo-it-production --tail 50 2>&1
+              exit 1
+            fi
 
 
       - name: Notify success
