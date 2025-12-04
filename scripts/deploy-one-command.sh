@@ -15,6 +15,18 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Загрузка переменных из .env.deploy если файл существует
+if [ -f .env.deploy ]; then
+    echo -e "${BLUE}📋 Загрузка переменных из .env.deploy${NC}"
+    set -a
+    source .env.deploy
+    set +a
+    # Разворачиваем ~ в полный путь для SSH ключа
+    if [[ "$PRODUCTION_SERVER_SSH_KEY" == ~* ]]; then
+        PRODUCTION_SERVER_SSH_KEY="${PRODUCTION_SERVER_SSH_KEY/#\~/$HOME}"
+    fi
+fi
+
 # Проверка наличия необходимых переменных окружения
 if [ -z "$PRODUCTION_SERVER_HOST" ] || [ -z "$PRODUCTION_SERVER_USER" ] || [ -z "$PRODUCTION_SERVER_SSH_KEY" ]; then
     echo -e "${RED}❌ Ошибка: Не заданы переменные окружения для деплоя${NC}"
@@ -22,20 +34,14 @@ if [ -z "$PRODUCTION_SERVER_HOST" ] || [ -z "$PRODUCTION_SERVER_USER" ] || [ -z 
     echo "Создайте файл .env.deploy со следующим содержимым:"
     echo "PRODUCTION_SERVER_HOST=your-server-ip"
     echo "PRODUCTION_SERVER_USER=your-username"
-    echo "PRODUCTION_SERVER_SSH_KEY=/path/to/ssh/key"
+    echo "PRODUCTION_SERVER_SSH_KEY=~/.ssh/id_rsa"
     echo "PRODUCTION_SERVER_PORT=22"
     echo ""
     echo "Или экспортируйте переменные:"
     echo "export PRODUCTION_SERVER_HOST=your-server-ip"
     echo "export PRODUCTION_SERVER_USER=your-username"
-    echo "export PRODUCTION_SERVER_SSH_KEY=/path/to/ssh/key"
+    echo "export PRODUCTION_SERVER_SSH_KEY=~/.ssh/id_rsa"
     exit 1
-fi
-
-# Загрузка переменных из .env.deploy если файл существует
-if [ -f .env.deploy ]; then
-    echo -e "${BLUE}📋 Загрузка переменных из .env.deploy${NC}"
-    export $(cat .env.deploy | grep -v '^#' | xargs)
 fi
 
 SERVER_HOST=${PRODUCTION_SERVER_HOST}
