@@ -101,10 +101,25 @@ jobs:
           script: |
             cd /opt/kreo-it
             docker load < kreo-it-production.tar.gz || true
+            
+            # Останавливаем и удаляем старые контейнеры более агрессивно
             docker compose stop landing || true
             docker compose rm -f landing || true
-            docker compose up -d landing
-            sleep 10
+            
+            # Удаляем контейнер по имени, если он существует (для совместимости)
+            docker stop kreo-it-production 2>/dev/null || true
+            docker rm -f kreo-it-production 2>/dev/null || true
+            
+            # Запускаем новый контейнер с удалением orphan контейнеров
+            docker compose up -d --remove-orphans landing
+            
+            # Ждем запуска контейнера
+            echo "Ожидание запуска контейнера..."
+            sleep 15
+            
+            # Проверяем статус контейнера
+            docker compose ps landing
+            
             # Обновление Nginx конфигурации
             if [ -f nginx-production.conf ]; then
               sudo cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
@@ -123,11 +138,30 @@ jobs:
           key: ${{ secrets.PRODUCTION_SERVER_SSH_KEY }}
           port: ${{ secrets.PRODUCTION_SERVER_PORT || 22 }}
           script: |
-            sleep 15
+            sleep 20
             # Проверяем статус контейнера
+            echo "=== Статус контейнера ==="
             docker compose ps landing
+            
+            # Проверяем логи контейнера
+            echo "=== Последние логи контейнера ==="
+            docker compose logs landing --tail 30
+            
             # Проверяем доступность приложения
-            curl -f http://localhost:3001/health || curl -f http://localhost:3001 || (echo "Health check failed" && docker compose logs landing --tail 50 && exit 1)
+            echo "=== Проверка доступности ==="
+            for i in {1..5}; do
+              if curl -f -s http://localhost:3001 > /dev/null 2>&1; then
+                echo "✅ Приложение доступно!"
+                exit 0
+              fi
+              echo "Попытка $i/5: приложение еще не готово, ждем..."
+              sleep 5
+            done
+            
+            echo "❌ Health check failed после 5 попыток"
+            echo "=== Полные логи контейнера ==="
+            docker compose logs landing
+            exit 1
 
       - name: Rollback on failure
         if: failure()
