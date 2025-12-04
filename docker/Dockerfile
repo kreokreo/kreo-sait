@@ -24,6 +24,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Включаем standalone режим для оптимизации
 RUN npm run build
 
+# Проверяем, что standalone build создан
+RUN ls -la .next/standalone 2>&1 || (echo "ERROR: .next/standalone не найден!" && ls -la .next/ && exit 1)
+RUN ls -la .next/standalone/server.js 2>&1 || (echo "ERROR: server.js не найден в standalone!" && ls -la .next/standalone/ && exit 1)
+
 # Stage 3: Runner
 FROM node:18-alpine AS runner
 WORKDIR /app
@@ -39,6 +43,15 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Проверяем, что все файлы на месте
+RUN ls -la && \
+    if [ ! -f server.js ]; then \
+      echo "ERROR: server.js не найден после копирования!" && \
+      ls -la && \
+      exit 1; \
+    fi && \
+    echo "✅ server.js найден"
 
 # Устанавливаем правильные права
 RUN chown -R nextjs:nodejs /app

@@ -22,7 +22,8 @@ const nextConfig = {
     position: 'bottom-right',
   },
   // Для Docker (только для production build)
-  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // В production всегда используем standalone для Docker
+  output: 'standalone',
   // Исправление проблем с vendor chunks
   webpack: (config, { isServer }) => {
     if (!isServer) {
