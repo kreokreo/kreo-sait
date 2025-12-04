@@ -90,37 +90,90 @@ jobs:
             docker rm -f kreo-it-production 2>/dev/null || true
             
             # Запуск нового контейнера с проверкой
-            echo "Запуск контейнера..."
-            docker run -d \
+            echo "=== Запуск контейнера ==="
+            CONTAINER_ID=$(docker run -d \
               --name kreo-it-production \
               --restart unless-stopped \
               -p 3001:3000 \
               -e NODE_ENV=production \
               -e PORT=3000 \
-              kreo-it:production
+              kreo-it:production 2>&1) || {
+              echo "❌ Ошибка запуска контейнера: $CONTAINER_ID"
+              exit 1
+            }
+            
+            echo "Контейнер запущен: $CONTAINER_ID"
             
             # Ждем запуска
-            echo "Ожидание запуска контейнера (15 секунд)..."
-            sleep 15
+            echo "Ожидание запуска контейнера (20 секунд)..."
+            sleep 20
             
             # Проверяем статус
+            echo ""
             echo "=== Статус контейнера ==="
-            docker ps | grep kreo-it-production || echo "❌ Контейнер не запущен!"
+            docker ps -a | grep kreo-it-production || echo "❌ Контейнер не найден!"
+            
+            # Проверяем, запущен ли контейнер
+            if ! docker ps | grep -q "kreo-it-production"; then
+              echo "❌ Контейнер не запущен! Проверяем логи..."
+              echo ""
+              echo "=== Логи контейнера (последние 50 строк) ==="
+              docker logs kreo-it-production --tail 50 2>&1 || echo "Логи недоступны"
+              echo ""
+              echo "=== Проверка образа ==="
+              docker images | grep kreo-it
+              exit 1
+            fi
             
             # Проверяем логи
-            echo "=== Логи контейнера (последние 30 строк) ==="
-            docker logs kreo-it-production --tail 30 || echo "Логи недоступны"
+            echo ""
+            echo "=== Логи контейнера (последние 50 строк) ==="
+            docker logs kreo-it-production --tail 50 2>&1
+            
+            # Проверяем содержимое контейнера
+            echo ""
+            echo "=== Содержимое /app в контейнере ==="
+            docker exec kreo-it-production ls -la /app 2>&1 | head -20 || echo "Не удалось проверить содержимое"
+            
+            # Проверяем наличие server.js
+            echo ""
+            echo "=== Проверка server.js ==="
+            docker exec kreo-it-production test -f /app/server.js && echo "✅ server.js найден" || echo "❌ server.js НЕ найден!"
+            docker exec kreo-it-production ls -la /app/server.js 2>&1 || echo "Файл не найден"
+            
+            # Проверяем процесс Node.js
+            echo ""
+            echo "=== Процессы в контейнере ==="
+            docker exec kreo-it-production ps aux 2>&1 || echo "Не удалось проверить процессы"
+            
+            # Проверяем порт
+            echo ""
+            echo "=== Проверка порта 3000 внутри контейнера ==="
+            docker exec kreo-it-production netstat -tlnp 2>&1 | grep 3000 || docker exec kreo-it-production ss -tlnp 2>&1 | grep 3000 || echo "Порт 3000 не слушается внутри контейнера"
             
             # Проверяем доступность
-            echo "=== Проверка доступности ==="
-            for i in {1..5}; do
-              if curl -f -s -m 3 http://localhost:3001 > /dev/null 2>&1; then
+            echo ""
+            echo "=== Проверка доступности с хоста ==="
+            for i in {1..10}; do
+              if curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1; then
                 echo "✅ Приложение доступно на порту 3001!"
                 break
               fi
-              echo "Попытка $i/5: ждем..."
+              echo "Попытка $i/10: ждем..."
               sleep 3
             done
+            
+            # Финальная проверка
+            if ! curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1; then
+              echo ""
+              echo "❌ Приложение НЕ доступно после 10 попыток!"
+              echo "=== Детальная диагностика ==="
+              echo "Статус контейнера:"
+              docker inspect kreo-it-production --format='{{.State.Status}}' 2>&1
+              echo "Логи (полные):"
+              docker logs kreo-it-production 2>&1 | tail -100
+              exit 1
+            fi
             
             # Обновление Nginx
             if [ -f nginx-production.conf ]; then

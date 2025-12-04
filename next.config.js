@@ -22,7 +22,19 @@ const nextConfig = {
     position: 'bottom-right',
   },
   // Для Docker (только для production build)
-  output: 'standalone', // Включаем для Docker деплоя
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
+  // Исправление проблем с vendor chunks
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+      };
+    }
+    return config;
+  },
+  // Оптимизация для framer-motion
+  transpilePackages: ['framer-motion'],
 }
 
 module.exports = nextConfig
