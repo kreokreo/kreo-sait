@@ -181,21 +181,44 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     fi
     
     echo ""
-    echo "=== Обновление Nginx конфигурации (если есть) ==="
-    if [ -f "docker/nginx-production.conf" ]; then
-        # Обновляем proxy_pass на порт 3000
-        sudo sed -i 's|proxy_pass http://127.0.0.1:3001|proxy_pass http://127.0.0.1:3000|g' docker/nginx-production.conf 2>/dev/null || true
-        sudo sed -i 's|proxy_pass http://localhost:3001|proxy_pass http://127.0.0.1:3000|g' docker/nginx-production.conf 2>/dev/null || true
+    echo "=== Настройка Nginx ==="
+    
+    # Копируем конфигурацию Nginx
+    if [ -f "nginx/kreo.pro.conf" ]; then
+        echo "Копирование конфигурации Nginx..."
+        sudo cp nginx/kreo.pro.conf /etc/nginx/sites-available/kreo.pro
+        sudo rm -f /etc/nginx/sites-enabled/kreo.pro
+        sudo ln -sf /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
         
-        sudo cp docker/nginx-production.conf /etc/nginx/sites-available/kreo.pro 2>/dev/null || true
-        sudo rm -f /etc/nginx/sites-enabled/kreo.pro 2>/dev/null || true
-        sudo ln -sf /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro 2>/dev/null || true
-        
+        # Проверяем конфигурацию
         if sudo nginx -t 2>/dev/null; then
-            sudo systemctl restart nginx 2>/dev/null || true
-            echo "✅ Nginx конфигурация обновлена"
+            echo "✅ Конфигурация Nginx валидна"
+        else
+            echo "⚠️  Ошибка в конфигурации Nginx, проверьте вручную"
+            sudo nginx -t
         fi
     fi
+    
+    # Установка SSL сертификата (если домен настроен)
+    echo ""
+    echo "=== Проверка SSL сертификата ==="
+    if [ ! -f "/etc/letsencrypt/live/kreo.pro/fullchain.pem" ]; then
+        echo "SSL сертификат не найден"
+        echo ""
+        echo "Для установки SSL выполните на сервере:"
+        echo "  sudo apt install certbot python3-certbot-nginx -y"
+        echo "  sudo certbot --nginx -d kreo.pro -d www.kreo.pro"
+        echo ""
+        echo "Или используйте временную конфигурацию без SSL (только для тестирования)"
+    else
+        echo "✅ SSL сертификат найден"
+    fi
+    
+    # Перезапуск Nginx
+    echo ""
+    echo "=== Перезапуск Nginx ==="
+    sudo systemctl restart nginx 2>/dev/null || true
+    sudo systemctl status nginx --no-pager -l | head -5 || true
     
     echo ""
     echo "=== Финальная проверка ==="
