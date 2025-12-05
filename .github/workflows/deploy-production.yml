@@ -201,13 +201,28 @@ jobs:
               grep -A 2 "proxy_pass" nginx-production.conf | head -5
               
               echo ""
-              echo "Копирование конфигурации:"
-              sudo cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
+              echo "Текущая конфигурация на сервере (ДО обновления):"
+              sudo grep -A 2 "proxy_pass" /etc/nginx/sites-available/kreo.pro 2>&1 | head -5 || echo "Файл не найден"
               
               echo ""
-              echo "Создание симлинка:"
-              [ -L /etc/nginx/sites-enabled/kreo.pro ] && sudo rm /etc/nginx/sites-enabled/kreo.pro || true
+              echo "Копирование конфигурации:"
+              sudo cp -v nginx-production.conf /etc/nginx/sites-available/kreo.pro
+              
+              echo ""
+              echo "Проверка скопированного файла:"
+              sudo grep -A 2 "proxy_pass" /etc/nginx/sites-available/kreo.pro | head -5
+              
+              echo ""
+              echo "Удаление старого симлинка:"
+              sudo rm -f /etc/nginx/sites-enabled/kreo.pro
+              
+              echo ""
+              echo "Создание нового симлинка:"
               sudo ln -sf /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
+              
+              echo ""
+              echo "Проверка симлинка:"
+              ls -la /etc/nginx/sites-enabled/kreo.pro
               
               echo ""
               echo "Проверка конфигурации Nginx:"
@@ -219,30 +234,38 @@ jobs:
               fi
               
               echo ""
-              echo "Проверка активной конфигурации на сервере (proxy_pass):"
+              echo "Проверка всех конфигураций для kreo.pro:"
+              echo "В sites-available:"
               sudo grep -A 2 "proxy_pass" /etc/nginx/sites-available/kreo.pro | head -5
+              echo ""
+              echo "В sites-enabled:"
+              sudo grep -A 2 "proxy_pass" /etc/nginx/sites-enabled/kreo.pro 2>&1 | head -5 || echo "Симлинк не работает"
               
               echo ""
               echo "Проверка всех server блоков для kreo.pro:"
               sudo grep -r "server_name.*kreo.pro" /etc/nginx/sites-enabled/ 2>&1 | head -10
               
               echo ""
-              echo "Перезагрузка Nginx (reload):"
-              sudo systemctl reload nginx 2>&1
+              echo "ПОЛНАЯ перезагрузка Nginx (restart):"
+              sudo systemctl restart nginx 2>&1
               
               if [ $? -ne 0 ]; then
-                echo "❌ Ошибка перезагрузки Nginx! Пробуем restart:"
-                sudo systemctl restart nginx 2>&1
+                echo "❌ Ошибка перезапуска Nginx!"
+                sudo systemctl status nginx --no-pager -l | head -20
+                exit 1
               fi
+              
+              echo ""
+              echo "Ожидание запуска Nginx (3 секунды)..."
+              sleep 3
               
               echo ""
               echo "Статус Nginx:"
               sudo systemctl status nginx --no-pager -l | head -15
               
               echo ""
-              echo "Проверка, что конфигурация применена:"
-              sleep 2
-              sudo nginx -T 2>&1 | grep -A 5 "server_name kreo.pro" | grep -A 3 "proxy_pass" | head -10
+              echo "Проверка ФИНАЛЬНОЙ конфигурации через nginx -T:"
+              sudo nginx -T 2>&1 | grep -B 2 -A 5 "server_name kreo.pro" | grep -A 5 "proxy_pass" | head -15
             else
               echo "⚠️  nginx-production.conf не найден!"
             fi
