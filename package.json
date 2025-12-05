@@ -14,7 +14,8 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f production",
     "deploy": "./scripts/deploy-one-command.sh",
-    "deploy:fast": "./scripts/deploy-fast.sh"
+    "deploy:fast": "./scripts/deploy-fast.sh",
+    "deploy:direct": "./scripts/deploy-direct.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
