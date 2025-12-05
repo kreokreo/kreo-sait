@@ -119,13 +119,12 @@ echo -e "${BLUE}📤 Шаг 2: Подготовка файлов для депл
 TEMP_DIR=$(mktemp -d)
 echo "Создание архива в $TEMP_DIR..."
 
-# Копируем необходимые файлы и папки
+# Копируем необходимые файлы и папки (без node_modules - установим на сервере)
 cp -r .next "$TEMP_DIR/"
 cp -r public "$TEMP_DIR/"
 cp package.json "$TEMP_DIR/"
 cp package-lock.json "$TEMP_DIR/" 2>/dev/null || true
 cp next.config.js "$TEMP_DIR/" 2>/dev/null || true
-cp -r node_modules "$TEMP_DIR/" 2>/dev/null || true
 
 # Создаем архив
 ARCHIVE_NAME="kreo-it-deploy-$(date +%Y%m%d-%H%M%S).tar.gz"
@@ -176,7 +175,8 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     
     echo ""
     echo "=== Установка зависимостей ==="
-    npm ci --production || npm install --production
+    # Устанавливаем все зависимости (включая dev для сборки, если нужно)
+    npm ci || npm install
     
     echo ""
     echo "=== Остановка старого процесса ==="
@@ -192,8 +192,13 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
         npm install -g pm2
     fi
     
-    # Запускаем приложение
-    PORT=3000 NODE_ENV=production pm2 start npm --name kreo-it -- start
+    # Запускаем приложение через PM2
+    # Используем next start для production
+    PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start npm --name kreo-it -- start
+    
+    # Или можно использовать напрямую node, если есть server.js
+    # PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start server.js --name kreo-it || \
+    # PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start npm --name kreo-it -- start
     
     # Сохраняем конфигурацию PM2
     pm2 save
