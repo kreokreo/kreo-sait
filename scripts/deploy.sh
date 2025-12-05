@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Скрипт для деплоя проекта на сервер
+# Скрипт для деплоя проекта на сервер из Git репозитория
 # Использование: ./scripts/deploy.sh [ветка]
 
 set -e
@@ -12,7 +12,7 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 Деплой проекта на сервер${NC}"
+echo -e "${BLUE}🚀 Деплой проекта на сервер из Git${NC}"
 echo ""
 
 # Проверка наличия .env.deploy
@@ -25,6 +25,7 @@ if [ ! -f .env.deploy ]; then
     echo "PRODUCTION_SERVER_SSH_KEY=~/.ssh/your_key"
     echo "PRODUCTION_SERVER_PORT=22"
     echo "DEPLOY_PATH=/opt/kreo-it"
+    echo "GIT_REPO_URL=https://github.com/kreokreo/kreo-sait.git"
     exit 1
 fi
 
@@ -52,6 +53,7 @@ SERVER_USER=${PRODUCTION_SERVER_USER}
 SERVER_SSH_KEY=${PRODUCTION_SERVER_SSH_KEY}
 SERVER_PORT=${PRODUCTION_SERVER_PORT:-22}
 DEPLOY_PATH=${DEPLOY_PATH:-/opt/kreo-it}
+GIT_REPO_URL=${GIT_REPO_URL:-https://github.com/kreokreo/kreo-sait.git}
 
 # Получаем ветку для деплоя
 if [ -z "$1" ]; then
@@ -65,6 +67,7 @@ fi
 
 echo -e "${BLUE}📋 Параметры деплоя:${NC}"
 echo "   Сервер: $SERVER_USER@$SERVER_HOST:$SERVER_PORT"
+echo "   Репозиторий: $GIT_REPO_URL"
 echo "   Ветка: $BRANCH"
 echo "   Путь на сервере: $DEPLOY_PATH"
 echo ""
@@ -84,99 +87,47 @@ fi
 echo -e "${GREEN}✅ SSH подключение успешно${NC}"
 echo ""
 
-# Проверка, что мы в git репозитории
-if [ ! -d .git ]; then
-    echo -e "${RED}❌ Ошибка: это не git репозиторий${NC}"
-    exit 1
-fi
-
-# Проверяем, что ветка существует
-if ! git rev-parse --verify "$BRANCH" > /dev/null 2>&1; then
-    echo -e "${RED}❌ Ошибка: ветка $BRANCH не найдена${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}📦 Шаг 1: Сборка проекта...${NC}"
-npm run build
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Ошибка сборки проекта${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Сборка завершена${NC}"
-echo ""
-
-# Проверка, что сборка прошла успешно
-if [ ! -d ".next" ]; then
-    echo -e "${RED}❌ Ошибка: папка .next не найдена после сборки${NC}"
-    exit 1
-fi
-
-echo -e "${BLUE}📤 Шаг 2: Подготовка файлов для деплоя...${NC}"
-
-# Создаем временную папку для архивации
-TEMP_DIR=$(mktemp -d)
-echo "Создание архива в $TEMP_DIR..."
-
-# Копируем необходимые файлы и папки (без node_modules - установим на сервере)
-cp -r .next "$TEMP_DIR/"
-cp -r public "$TEMP_DIR/"
-cp package.json "$TEMP_DIR/"
-cp package-lock.json "$TEMP_DIR/" 2>/dev/null || true
-cp next.config.js "$TEMP_DIR/" 2>/dev/null || true
-
-# Создаем архив
-ARCHIVE_NAME="kreo-it-deploy-$(date +%Y%m%d-%H%M%S).tar.gz"
-cd "$TEMP_DIR"
-tar -czf "../$ARCHIVE_NAME" .
-cd - > /dev/null
-ARCHIVE_PATH="$TEMP_DIR/../$ARCHIVE_NAME"
-
-echo -e "${GREEN}✅ Архив создан: $ARCHIVE_NAME${NC}"
-echo ""
-
-# Копируем архив на сервер
-echo -e "${BLUE}📤 Шаг 3: Копирование архива на сервер...${NC}"
-scp -i "$SERVER_SSH_KEY" -P "$SERVER_PORT" \
-    "$ARCHIVE_PATH" \
-    "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/"
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Ошибка копирования файлов на сервер${NC}"
-    rm -rf "$TEMP_DIR" "$ARCHIVE_PATH"
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Файлы скопированы${NC}"
-echo ""
-
-# Копируем Nginx конфигурацию (если есть)
-if [ -f "docker/nginx-production.conf" ]; then
-    echo -e "${BLUE}📋 Копирование Nginx конфигурации...${NC}"
-    scp -i "$SERVER_SSH_KEY" -P "$SERVER_PORT" \
-        docker/nginx-production.conf \
-        "$SERVER_USER@$SERVER_HOST:$DEPLOY_PATH/" 2>/dev/null || echo -e "${YELLOW}⚠️  Nginx конфигурация не скопирована${NC}"
-fi
-
-echo ""
-
 # Деплой на сервере
-echo -e "${BLUE}🚀 Шаг 4: Деплой на сервере...${NC}"
+echo -e "${BLUE}🚀 Деплой на сервере...${NC}"
 ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     set -e
     DEPLOY_PATH=${DEPLOY_PATH:-/opt/kreo-it}
-    ARCHIVE_NAME="$ARCHIVE_NAME"
+    GIT_REPO_URL="$GIT_REPO_URL"
+    BRANCH="$BRANCH"
     
-    cd $DEPLOY_PATH || { echo "❌ Директория $DEPLOY_PATH не существует!"; exit 1; }
+    echo "=== Создание директории для деплоя ==="
+    mkdir -p $DEPLOY_PATH
+    cd $DEPLOY_PATH
     
-    echo "=== Распаковка архива ==="
-    tar -xzf "$ARCHIVE_NAME" -C .
+    echo ""
+    echo "=== Клонирование/обновление репозитория ==="
+    if [ -d ".git" ]; then
+        echo "Репозиторий уже существует, обновляем..."
+        git fetch origin
+        git reset --hard origin/\$BRANCH
+        git clean -fd
+    else
+        echo "Клонируем репозиторий..."
+        git clone -b \$BRANCH \$GIT_REPO_URL .
+    fi
+    
+    echo ""
+    echo "=== Проверка текущей ветки ==="
+    git branch --show-current
+    git log --oneline -1
     
     echo ""
     echo "=== Установка зависимостей ==="
-    # Устанавливаем все зависимости (включая dev для сборки, если нужно)
     npm ci || npm install
+    
+    echo ""
+    echo "=== Сборка проекта ==="
+    NODE_ENV=production npm run build
+    
+    if [ ! -d ".next" ]; then
+        echo "❌ Ошибка: папка .next не найдена после сборки"
+        exit 1
+    fi
     
     echo ""
     echo "=== Остановка старого процесса ==="
@@ -184,73 +135,89 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     pm2 delete kreo-it 2>/dev/null || true
     
     echo ""
-    echo "=== Запуск приложения через PM2 ==="
-    
-    # Проверяем, установлен ли PM2
+    echo "=== Установка PM2 (если нужно) ==="
     if ! command -v pm2 &> /dev/null; then
         echo "Установка PM2..."
         npm install -g pm2
     fi
     
-    # Запускаем приложение через PM2
-    # Используем next start для production
+    echo ""
+    echo "=== Запуск приложения через PM2 ==="
     PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start npm --name kreo-it -- start
-    
-    # Или можно использовать напрямую node, если есть server.js
-    # PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start server.js --name kreo-it || \
-    # PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start npm --name kreo-it -- start
     
     # Сохраняем конфигурацию PM2
     pm2 save
     pm2 startup 2>/dev/null || true
     
     echo ""
-    echo "=== Ожидание запуска (10 секунд) ==="
-    sleep 10
+    echo "=== Ожидание запуска (15 секунд) ==="
+    sleep 15
     
     echo ""
-    echo "=== Проверка статуса ==="
+    echo "=== Проверка статуса PM2 ==="
     pm2 status kreo-it
     
     echo ""
-    echo "=== Проверка доступности ==="
-    for i in {1..5}; do
+    echo "=== Проверка доступности приложения ==="
+    for i in {1..10}; do
         if curl -f -s -m 5 http://localhost:3000 > /dev/null 2>&1; then
             echo "✅ Приложение доступно на порту 3000!"
             break
         fi
-        echo "Попытка $i/5: ждем..."
+        echo "Попытка $i/10: ждем..."
         sleep 3
     done
     
+    if ! curl -f -s -m 5 http://localhost:3000 > /dev/null 2>&1; then
+        echo "⚠️  Приложение не отвечает, проверьте логи:"
+        pm2 logs kreo-it --lines 20 --nostream
+    fi
+    
     echo ""
-    echo "=== Очистка старых архивов ==="
-    rm -f kreo-it-deploy-*.tar.gz
+    echo "=== Обновление Nginx конфигурации (если есть) ==="
+    if [ -f "docker/nginx-production.conf" ]; then
+        # Обновляем proxy_pass на порт 3000
+        sudo sed -i 's|proxy_pass http://127.0.0.1:3001|proxy_pass http://127.0.0.1:3000|g' docker/nginx-production.conf 2>/dev/null || true
+        sudo sed -i 's|proxy_pass http://localhost:3001|proxy_pass http://127.0.0.1:3000|g' docker/nginx-production.conf 2>/dev/null || true
+        
+        sudo cp docker/nginx-production.conf /etc/nginx/sites-available/kreo.pro 2>/dev/null || true
+        sudo rm -f /etc/nginx/sites-enabled/kreo.pro 2>/dev/null || true
+        sudo ln -sf /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro 2>/dev/null || true
+        
+        if sudo nginx -t 2>/dev/null; then
+            sudo systemctl restart nginx 2>/dev/null || true
+            echo "✅ Nginx конфигурация обновлена"
+        fi
+    fi
     
     echo ""
     echo "=== Финальная проверка ==="
+    echo "Статус PM2:"
+    pm2 status kreo-it
+    
+    echo ""
+    echo "Последние логи:"
     pm2 logs kreo-it --lines 10 --nostream
 EOF
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Ошибка деплоя на сервере${NC}"
-    rm -rf "$TEMP_DIR" "$ARCHIVE_PATH"
     exit 1
 fi
-
-# Очистка локальных временных файлов
-echo ""
-echo -e "${BLUE}🧹 Очистка временных файлов...${NC}"
-rm -rf "$TEMP_DIR" "$ARCHIVE_PATH"
 
 echo ""
 echo -e "${GREEN}✅ Деплой успешно завершен!${NC}"
 echo ""
 echo -e "${YELLOW}📋 Информация:${NC}"
+echo "   Репозиторий: $GIT_REPO_URL"
 echo "   Ветка: $BRANCH"
 echo "   Сервер: $SERVER_USER@$SERVER_HOST"
 echo "   Путь: $DEPLOY_PATH"
 echo ""
 echo -e "${YELLOW}🌐 Сайт должен быть доступен по адресу:${NC}"
 echo "   https://kreo.pro"
+echo ""
+echo -e "${BLUE}💡 Полезные команды для проверки:${NC}"
+echo "   ssh -i $SERVER_SSH_KEY -p $SERVER_PORT $SERVER_USER@$SERVER_HOST 'cd $DEPLOY_PATH && pm2 status'"
+echo "   ssh -i $SERVER_SSH_KEY -p $SERVER_PORT $SERVER_USER@$SERVER_HOST 'cd $DEPLOY_PATH && pm2 logs kreo-it'"
 echo ""
