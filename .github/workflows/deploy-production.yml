@@ -196,23 +196,53 @@ jobs:
             # Обновление Nginx
             if [ -f nginx-production.conf ]; then
               echo "=== Обновление Nginx конфигурации ==="
-              sudo cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
-              [ -L /etc/nginx/sites-enabled/kreo.pro ] || sudo ln -s /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
               
+              echo "Содержимое nginx-production.conf (proxy_pass):"
+              grep -A 2 "proxy_pass" nginx-production.conf | head -5
+              
+              echo ""
+              echo "Копирование конфигурации:"
+              sudo cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
+              
+              echo ""
+              echo "Создание симлинка:"
+              [ -L /etc/nginx/sites-enabled/kreo.pro ] && sudo rm /etc/nginx/sites-enabled/kreo.pro || true
+              sudo ln -sf /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
+              
+              echo ""
               echo "Проверка конфигурации Nginx:"
               sudo nginx -t 2>&1
               
+              if [ $? -ne 0 ]; then
+                echo "❌ Ошибка в конфигурации Nginx!"
+                exit 1
+              fi
+              
               echo ""
-              echo "Текущая конфигурация proxy_pass:"
+              echo "Проверка активной конфигурации на сервере (proxy_pass):"
               sudo grep -A 2 "proxy_pass" /etc/nginx/sites-available/kreo.pro | head -5
               
               echo ""
-              echo "Перезагрузка Nginx:"
+              echo "Проверка всех server блоков для kreo.pro:"
+              sudo grep -r "server_name.*kreo.pro" /etc/nginx/sites-enabled/ 2>&1 | head -10
+              
+              echo ""
+              echo "Перезагрузка Nginx (reload):"
               sudo systemctl reload nginx 2>&1
+              
+              if [ $? -ne 0 ]; then
+                echo "❌ Ошибка перезагрузки Nginx! Пробуем restart:"
+                sudo systemctl restart nginx 2>&1
+              fi
               
               echo ""
               echo "Статус Nginx:"
-              sudo systemctl status nginx --no-pager -l | head -10
+              sudo systemctl status nginx --no-pager -l | head -15
+              
+              echo ""
+              echo "Проверка, что конфигурация применена:"
+              sleep 2
+              sudo nginx -T 2>&1 | grep -A 5 "server_name kreo.pro" | grep -A 3 "proxy_pass" | head -10
             else
               echo "⚠️  nginx-production.conf не найден!"
             fi
