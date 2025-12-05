@@ -299,6 +299,20 @@ jobs:
             curl -k -v https://localhost 2>&1 | head -40 || echo "Не удалось проверить HTTPS"
             
             echo ""
+            echo "=== Проверка подключения Nginx к приложению ==="
+            echo "Тест подключения от имени Nginx пользователя:"
+            sudo -u www-data curl -v http://127.0.0.1:3001 2>&1 | head -20 || echo "Не удалось подключиться от имени www-data"
+            
+            echo ""
+            echo "=== Проверка всех активных Nginx конфигураций ==="
+            echo "Сайты в sites-enabled:"
+            ls -la /etc/nginx/sites-enabled/ 2>&1 || echo "Директория не найдена"
+            
+            echo ""
+            echo "Проверка всех server блоков с kreo.pro:"
+            sudo grep -r "server_name.*kreo" /etc/nginx/ 2>&1 | head -10 || echo "Не найдено"
+            
+            echo ""
             echo "=== Проверка доступности через Nginx ==="
             curl -v -H "Host: kreo.pro" http://127.0.0.1 2>&1 | head -30 || echo "Не удалось проверить через Nginx"
             
