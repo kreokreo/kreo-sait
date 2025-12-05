@@ -12,7 +12,9 @@
     "docker:build": "docker build --build-arg BUILD_MODE=production -t kreo-it:production .",
     "docker:up": "docker-compose up -d production",
     "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f production"
+    "docker:logs": "docker-compose logs -f production",
+    "git:push": "./scripts/git-push.sh",
+    "deploy": "./scripts/deploy.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.2",
