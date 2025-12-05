@@ -142,6 +142,14 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     fi
     
     echo ""
+    echo "=== Копирование статических файлов для standalone режима ==="
+    if [ -d ".next/standalone" ] && [ -d ".next/static" ]; then
+        echo "Копируем статические файлы в standalone..."
+        cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+        echo "✅ Статические файлы скопированы"
+    fi
+    
+    echo ""
     echo "=== Запуск приложения через PM2 ==="
     # Проверяем, есть ли standalone build
     if [ -f ".next/standalone/server.js" ]; then
