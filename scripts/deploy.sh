@@ -143,7 +143,14 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     
     echo ""
     echo "=== Запуск приложения через PM2 ==="
-    PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start npm --name kreo-it -- start
+    # Проверяем, есть ли standalone build
+    if [ -f ".next/standalone/server.js" ]; then
+        echo "Используем standalone build..."
+        PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start .next/standalone/server.js --name kreo-it
+    else
+        echo "Используем npm start..."
+        PORT=3000 NODE_ENV=production HOSTNAME=0.0.0.0 pm2 start npm --name kreo-it -- start
+    fi
     
     # Сохраняем конфигурацию PM2
     pm2 save
