@@ -195,9 +195,26 @@ jobs:
             
             # Обновление Nginx
             if [ -f nginx-production.conf ]; then
+              echo "=== Обновление Nginx конфигурации ==="
               sudo cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
               [ -L /etc/nginx/sites-enabled/kreo.pro ] || sudo ln -s /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
-              sudo nginx -t && sudo systemctl reload nginx
+              
+              echo "Проверка конфигурации Nginx:"
+              sudo nginx -t 2>&1
+              
+              echo ""
+              echo "Текущая конфигурация proxy_pass:"
+              sudo grep -A 2 "proxy_pass" /etc/nginx/sites-available/kreo.pro | head -5
+              
+              echo ""
+              echo "Перезагрузка Nginx:"
+              sudo systemctl reload nginx 2>&1
+              
+              echo ""
+              echo "Статус Nginx:"
+              sudo systemctl status nginx --no-pager -l | head -10
+            else
+              echo "⚠️  nginx-production.conf не найден!"
             fi
             
             # Очистка старых образов
@@ -250,12 +267,36 @@ jobs:
             docker exec kreo-it-production netstat -tlnp 2>&1 | grep 3000 || docker exec kreo-it-production ss -tlnp 2>&1 | grep 3000 || echo "Порт 3000 не слушается внутри контейнера"
             
             echo ""
-            echo "=== Ошибки Nginx (последние 30 строк) ==="
-            sudo tail -30 /var/log/nginx/kreo.pro.error.log 2>/dev/null || echo "Логи Nginx недоступны"
+            echo "=== Проверка логов Nginx ==="
+            echo "Поиск логов Nginx:"
+            sudo find /var/log/nginx -name "*kreo*" -o -name "*error*" 2>/dev/null | head -5 || echo "Логи не найдены"
             
             echo ""
-            echo "=== Access логи Nginx (последние 10 строк) ==="
-            sudo tail -10 /var/log/nginx/kreo.pro.access.log 2>/dev/null || echo "Access логи недоступны"
+            echo "Ошибки Nginx (все возможные места):"
+            sudo tail -30 /var/log/nginx/kreo.pro.error.log 2>/dev/null || \
+            sudo tail -30 /var/log/nginx/error.log 2>/dev/null || \
+            echo "Логи ошибок недоступны"
+            
+            echo ""
+            echo "Access логи Nginx:"
+            sudo tail -10 /var/log/nginx/kreo.pro.access.log 2>/dev/null || \
+            sudo tail -10 /var/log/nginx/access.log 2>/dev/null || \
+            echo "Access логи недоступны"
+            
+            echo ""
+            echo "=== Проверка конфигурации Nginx на сервере ==="
+            echo "Проверка синтаксиса:"
+            sudo nginx -t 2>&1
+            
+            echo ""
+            echo "Активная конфигурация proxy_pass:"
+            sudo grep -A 5 "location /" /etc/nginx/sites-available/kreo.pro 2>/dev/null || \
+            sudo grep -A 5 "location /" /etc/nginx/sites-enabled/kreo.pro 2>/dev/null || \
+            echo "Конфигурация не найдена"
+            
+            echo ""
+            echo "=== Проверка доступности через Nginx (HTTPS) ==="
+            curl -k -v https://localhost 2>&1 | head -40 || echo "Не удалось проверить HTTPS"
             
             echo ""
             echo "=== Проверка доступности через Nginx ==="
