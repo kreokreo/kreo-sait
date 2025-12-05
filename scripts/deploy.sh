@@ -183,42 +183,72 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     echo ""
     echo "=== Настройка Nginx ==="
     
+    # Проверяем наличие SSL сертификата
+    if [ -f "/etc/letsencrypt/live/kreo.pro/fullchain.pem" ]; then
+        echo "✅ SSL сертификат найден, используем полную конфигурацию"
+        NGINX_CONF="nginx/kreo.pro.conf"
+    else
+        echo "⚠️  SSL сертификат не найден, используем временную конфигурацию (HTTP)"
+        NGINX_CONF="nginx/kreo.pro.conf.temp"
+        
+        # Создаем временную конфигурацию если её нет
+        if [ ! -f "$NGINX_CONF" ]; then
+            echo "Создание временной конфигурации..."
+            cat > /tmp/kreo.pro.conf.temp << 'NGINX_TEMP'
+server {
+    listen 80;
+    server_name kreo.pro www.kreo.pro;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+NGINX_TEMP
+            NGINX_CONF="/tmp/kreo.pro.conf.temp"
+        fi
+    fi
+    
     # Копируем конфигурацию Nginx
-    if [ -f "nginx/kreo.pro.conf" ]; then
+    if [ -f "$NGINX_CONF" ]; then
         echo "Копирование конфигурации Nginx..."
-        sudo cp nginx/kreo.pro.conf /etc/nginx/sites-available/kreo.pro
+        sudo cp "$NGINX_CONF" /etc/nginx/sites-available/kreo.pro
         sudo rm -f /etc/nginx/sites-enabled/kreo.pro
         sudo ln -sf /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
         
         # Проверяем конфигурацию
         if sudo nginx -t 2>/dev/null; then
             echo "✅ Конфигурация Nginx валидна"
+            sudo systemctl restart nginx
+            echo "✅ Nginx перезапущен"
         else
-            echo "⚠️  Ошибка в конфигурации Nginx, проверьте вручную"
+            echo "⚠️  Ошибка в конфигурации Nginx"
             sudo nginx -t
         fi
+    else
+        echo "⚠️  Конфигурация Nginx не найдена"
     fi
     
-    # Установка SSL сертификата (если домен настроен)
-    echo ""
-    echo "=== Проверка SSL сертификата ==="
+    # Инструкции по установке SSL
     if [ ! -f "/etc/letsencrypt/live/kreo.pro/fullchain.pem" ]; then
-        echo "SSL сертификат не найден"
         echo ""
-        echo "Для установки SSL выполните на сервере:"
+        echo "=== Инструкции по установке SSL ==="
+        echo "После настройки DNS выполните на сервере:"
         echo "  sudo apt install certbot python3-certbot-nginx -y"
         echo "  sudo certbot --nginx -d kreo.pro -d www.kreo.pro"
         echo ""
-        echo "Или используйте временную конфигурацию без SSL (только для тестирования)"
-    else
-        echo "✅ SSL сертификат найден"
+        echo "Или вручную:"
+        echo "  sudo certbot certonly --standalone -d kreo.pro -d www.kreo.pro"
+        echo "  sudo cp nginx/kreo.pro.conf /etc/nginx/sites-available/kreo.pro"
+        echo "  sudo nginx -t && sudo systemctl restart nginx"
     fi
-    
-    # Перезапуск Nginx
-    echo ""
-    echo "=== Перезапуск Nginx ==="
-    sudo systemctl restart nginx 2>/dev/null || true
-    sudo systemctl status nginx --no-pager -l | head -5 || true
     
     echo ""
     echo "=== Финальная проверка ==="
