@@ -111,43 +111,127 @@ fi
 echo ""
 
 echo -e "${BLUE}🚀 Шаг 5: Деплой на сервере...${NC}"
-ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
+ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << 'EOF'
     set -e
-    cd $DEPLOY_PATH
+    DEPLOY_PATH=${DEPLOY_PATH:-/opt/kreo-it}
+    cd $DEPLOY_PATH || { echo "❌ Директория $DEPLOY_PATH не существует!"; exit 1; }
     
-    echo "Загрузка Docker образа..."
+    echo "=== Загрузка Docker образа ==="
     docker load < kreo-it-production.tar.gz || true
     
-    echo "Остановка текущего контейнера..."
-    docker compose stop landing || true
-    docker compose rm -f landing || true
+    echo ""
+    echo "=== Остановка и удаление старого контейнера ==="
+    docker stop kreo-it-production 2>/dev/null || true
+    docker rm -f kreo-it-production 2>/dev/null || true
     
-    echo "Запуск нового контейнера..."
-    docker compose up -d landing
+    echo ""
+    echo "=== Запуск нового контейнера ==="
+    CONTAINER_ID=$(docker run -d \
+      --name kreo-it-production \
+      --restart unless-stopped \
+      -p 3001:3000 \
+      -e NODE_ENV=production \
+      -e PORT=3000 \
+      kreo-it:production 2>&1) || {
+      echo "❌ Ошибка запуска контейнера: $CONTAINER_ID"
+      exit 1
+    }
     
-    echo "Ожидание запуска контейнера..."
-    sleep 10
+    echo "Контейнер запущен: $CONTAINER_ID"
     
-    echo "Проверка статуса контейнера..."
-    docker compose ps landing
+    echo ""
+    echo "Ожидание запуска контейнера (20 секунд)..."
+    sleep 20
     
-    echo "Обновление Nginx конфигурации..."
+    echo ""
+    echo "=== Проверка статуса контейнера ==="
+    docker ps -a | grep kreo-it-production || echo "❌ Контейнер не найден!"
+    
+    if ! docker ps | grep -q "kreo-it-production"; then
+      echo "❌ Контейнер не запущен! Логи:"
+      docker logs kreo-it-production --tail 50 2>&1 || echo "Логи недоступны"
+      exit 1
+    fi
+    
+    echo ""
+    echo "=== Проверка доступности приложения ==="
+    for i in {1..5}; do
+      if curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1; then
+        echo "✅ Приложение доступно на порту 3001!"
+        break
+      fi
+      echo "Попытка $i/5: ждем..."
+      sleep 3
+    done
+    
+    echo ""
+    echo "=== Обновление Nginx конфигурации ==="
     if [ -f nginx-production.conf ]; then
-        sudo cp nginx-production.conf /etc/nginx/sites-available/kreo.pro
-        if [ ! -L /etc/nginx/sites-enabled/kreo.pro ]; then
-            sudo ln -s /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
+        echo "Содержимое nginx-production.conf (proxy_pass):"
+        grep -A 2 "proxy_pass" nginx-production.conf | head -5
+        
+        echo ""
+        echo "Копирование конфигурации:"
+        sudo cp -v nginx-production.conf /etc/nginx/sites-available/kreo.pro
+        
+        echo ""
+        echo "Удаление старого симлинка:"
+        sudo rm -f /etc/nginx/sites-enabled/kreo.pro
+        
+        echo ""
+        echo "Создание нового симлинка:"
+        sudo ln -sf /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/kreo.pro
+        
+        echo ""
+        echo "Проверка конфигурации Nginx:"
+        sudo nginx -t 2>&1
+        
+        if [ $? -ne 0 ]; then
+          echo "❌ Ошибка в конфигурации Nginx!"
+          exit 1
         fi
-        echo "Проверка конфигурации Nginx..."
-        sudo nginx -t && sudo systemctl reload nginx || echo "⚠️  Ошибка перезагрузки Nginx"
+        
+        echo ""
+        echo "ПОЛНАЯ перезагрузка Nginx (restart):"
+        sudo systemctl restart nginx 2>&1
+        
+        if [ $? -ne 0 ]; then
+          echo "❌ Ошибка перезапуска Nginx!"
+          sudo systemctl status nginx --no-pager -l | head -20
+          exit 1
+        fi
+        
+        echo ""
+        echo "Ожидание запуска Nginx (3 секунды)..."
+        sleep 3
+        
+        echo ""
+        echo "Проверка финальной конфигурации:"
+        sudo nginx -T 2>&1 | grep -B 2 -A 5 "server_name kreo.pro" | grep -A 3 "proxy_pass" | head -10
+        
+        echo ""
+        echo "✅ Nginx конфигурация обновлена и перезапущена"
     else
         echo "⚠️  Nginx конфигурация не найдена, пропускаем обновление"
     fi
     
-    echo "Очистка старых образов..."
-    docker system prune -f
+    echo ""
+    echo "=== Очистка старых образов ==="
+    docker image prune -f
+    
+    echo ""
+    echo "=== Финальная проверка ==="
+    echo "Статус контейнера:"
+    docker ps | grep kreo-it-production
+    
+    echo ""
+    echo "Проверка доступности через Nginx:"
+    curl -f -s -m 5 http://localhost:3001 > /dev/null 2>&1 && echo "✅ Приложение доступно!" || echo "⚠️  Приложение недоступно"
 EOF
 
-if [ $? -ne 0 ]; then
+DEPLOY_EXIT=$?
+
+if [ $DEPLOY_EXIT -ne 0 ]; then
     echo -e "${RED}❌ Ошибка деплоя на сервере${NC}"
     exit 1
 fi
@@ -157,10 +241,13 @@ echo -e "${GREEN}✅ Деплой успешно завершен!${NC}"
 echo ""
 echo -e "${YELLOW}📋 Проверьте статус на сервере:${NC}"
 echo "   ssh -i $SERVER_SSH_KEY -p $SERVER_PORT $SERVER_USER@$SERVER_HOST"
-echo "   cd $DEPLOY_PATH && docker compose ps"
+echo "   cd $DEPLOY_PATH && docker ps | grep kreo-it-production"
 echo ""
 echo -e "${YELLOW}🌐 Сайт должен быть доступен по адресу:${NC}"
 echo "   https://kreo.pro"
+echo ""
+echo -e "${BLUE}💡 Для проверки логов контейнера:${NC}"
+echo "   ssh -i $SERVER_SSH_KEY -p $SERVER_PORT $SERVER_USER@$SERVER_HOST 'docker logs kreo-it-production --tail 50'"
 echo ""
 
 # Очистка локальных файлов
