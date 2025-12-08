@@ -75,6 +75,7 @@ export default function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
+                  prefetch={false}
                   className={cn(
                     "text-sm font-medium transition-colors",
                     isActive 
@@ -119,6 +120,7 @@ export default function Header() {
                   <Link
                     key={item.name}
                     href={item.href}
+                    prefetch={false}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       "text-base font-medium transition-colors",
