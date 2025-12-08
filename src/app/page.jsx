@@ -24,6 +24,9 @@ export default function HomePage() {
     const [hoveredService, setHoveredService] = useState(null);
     const [carouselIndex, setCarouselIndex] = useState(0);
     const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
+    const [hoveredCase, setHoveredCase] = useState(null);
+    const videoRefs = useRef({});
+    const reverseAnimationRefs = useRef({});
     
     const testimonials = [
         { name: 'Алексей Петров', task: 'Разработка корпоративного сайта' },
@@ -155,6 +158,74 @@ export default function HomePage() {
     // Превью кейсов (первые 6) + наши проекты (3) = 9 всего (3 строки)
     const cases = [...allCases.slice(0, 6), ...ourProjects];
 
+    // Управление видео анимацией
+    useEffect(() => {
+        const totalCases = allCases.slice(0, 6).length + ourProjects.length;
+        
+        for (let i = 0; i < totalCases; i++) {
+            const video = videoRefs.current[i];
+            if (!video) continue;
+
+            // Останавливаем обратную анимацию если она была запущена
+            if (reverseAnimationRefs.current[i]) {
+                cancelAnimationFrame(reverseAnimationRefs.current[i]);
+                reverseAnimationRefs.current[i] = null;
+            }
+
+            if (hoveredCase === i) {
+                // При наведении - проигрываем вперед
+                const playForward = () => {
+                    if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+                        video.currentTime = 0;
+                        video.play().catch(() => {});
+                        
+                        // Останавливаем на последнем кадре
+                        const handleTimeUpdate = () => {
+                            if (video.currentTime >= video.duration - 0.05) {
+                                video.pause();
+                                video.currentTime = video.duration;
+                                video.removeEventListener('timeupdate', handleTimeUpdate);
+                            }
+                        };
+                        video.addEventListener('timeupdate', handleTimeUpdate);
+                    } else {
+                        // Ждем загрузки видео
+                        video.addEventListener('loadeddata', playForward, { once: true });
+                    }
+                };
+                playForward();
+            } else {
+                // Если мышь ушла или наведен другой кейс - возвращаем к началу
+                const reversePlay = () => {
+                    if (video.currentTime > 0) {
+                        video.currentTime = Math.max(0, video.currentTime - 0.05); // плавная обратная перемотка
+                        reverseAnimationRefs.current[i] = requestAnimationFrame(reversePlay);
+                    } else {
+                        video.pause();
+                        video.currentTime = 0;
+                        reverseAnimationRefs.current[i] = null;
+                    }
+                };
+                if (video.currentTime > 0) {
+                    reverseAnimationRefs.current[i] = requestAnimationFrame(reversePlay);
+                } else {
+                    // Убеждаемся что видео на первом кадре
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            }
+        }
+        
+        // Cleanup при размонтировании
+        return () => {
+            for (let i = 0; i < totalCases; i++) {
+                if (reverseAnimationRefs.current[i]) {
+                    cancelAnimationFrame(reverseAnimationRefs.current[i]);
+                    reverseAnimationRefs.current[i] = null;
+                }
+            }
+        };
+    }, [hoveredCase]);
 
     return (
         <div className="flex flex-col">
@@ -236,29 +307,54 @@ export default function HomePage() {
                             viewport={{ once: true, margin: "-50px" }}
                             transition={{ delay: i * 0.1, duration: 0.6 }}
                             className="group relative overflow-hidden"
+                            onMouseEnter={() => setHoveredCase(i)}
+                            onMouseLeave={() => setHoveredCase(null)}
                         >
                             <Link href={`/kejsy/${item.slug}`} className="block w-full h-full">
-                                {/* Изображение */}
+                                {/* Видео контейнер */}
                                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                                    <motion.img 
-                                        src={item.image} 
-                                        alt={item.client}
-                                        className="w-full h-full object-cover"
-                                        loading="lazy"
-                                        whileHover={{ scale: 1.1 }}
-                                        transition={{ duration: 0.6 }}
+                                    {/* Видео анимация - всегда видимое, показывает первый кадр по умолчанию */}
+                                    <video
+                                        ref={(el) => {
+                                            if (el) {
+                                                videoRefs.current[i] = el;
+                                                // Устанавливаем первый кадр при загрузке
+                                                const initVideo = () => {
+                                                    el.currentTime = 0;
+                                                    el.pause();
+                                                };
+                                                if (el.readyState >= 2) {
+                                                    initVideo();
+                                                } else {
+                                                    el.addEventListener('loadeddata', initVideo, { once: true });
+                                                    el.addEventListener('loadedmetadata', initVideo, { once: true });
+                                                }
+                                            }
+                                        }}
+                                        src="/animations/Dental animation.webm"
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        style={{ pointerEvents: 'none' }}
                                     />
+                                    
                                     {/* Градиентный оверлей при наведении */}
                                     <motion.div
                                         initial={{ opacity: 0 }}
-                                        whileHover={{ opacity: 1 }}
+                                        animate={{ opacity: hoveredCase === i ? 1 : 0 }}
+                                        transition={{ duration: 0.3 }}
                                         className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
                                     />
                                     
                                     {/* Иконка стрелки */}
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0 }}
-                                        whileHover={{ opacity: 1, scale: 1 }}
+                                        animate={{ 
+                                            opacity: hoveredCase === i ? 1 : 0,
+                                            scale: hoveredCase === i ? 1 : 0
+                                        }}
+                                        transition={{ duration: 0.3 }}
                                         className="absolute top-4 right-4"
                                     >
                                         <div className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center">

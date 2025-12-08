@@ -19,9 +19,9 @@ import '@/app/globals.css'
 // })
 
 export const metadata = {
-  title: 'Kreo - IT & AI Agency',
-  description: 'Делаем IT-продукты, которые приносят результат. Автоматизация, AI, сайты и сервисы для бизнеса.',
-  keywords: 'IT-разработка, AI, автоматизация, веб-приложения, сайты, CRM, ERP',
+  title: 'Kreo - Разработка сайтов, настройка рекламы и AI-автоматизация | IT & AI Agency',
+  description: 'Разработка сайтов, настройка рекламы в Яндекс.Директ, VK, Google Ads и AI-автоматизация для бизнеса. Создаем IT-продукты, которые приносят результат.',
+  keywords: 'разработка сайтов, настройка рекламы, Яндекс Директ, VK реклама, Google Ads, SEO продвижение, AI автоматизация, чат-боты, CRM, веб-приложения, интернет-магазины',
   authors: [{ name: 'Kreo' }],
   icons: {
     icon: [
@@ -32,8 +32,8 @@ export const metadata = {
     apple: '/favicon1.png',
   },
   openGraph: {
-    title: 'Kreo - IT & AI Agency',
-    description: 'Делаем IT-продукты, которые приносят результат',
+    title: 'Kreo - Разработка сайтов, настройка рекламы и AI-автоматизация',
+    description: 'Разработка сайтов, настройка рекламы в Яндекс.Директ, VK, Google Ads и AI-автоматизация для бизнеса. Создаем IT-продукты, которые приносят результат.',
     type: 'website',
     locale: 'ru_RU',
     siteName: 'Kreo',
