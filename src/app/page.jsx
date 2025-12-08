@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion';
-import { ArrowRight, TrendingUp, Users, Award, Play, CheckCircle2, Zap, DollarSign, Sparkles, Rocket, Palette, CheckCircle, Clock } from 'lucide-react';
+import { ArrowRight, TrendingUp, Users, Award, Play, CheckCircle2, Zap, DollarSign, Sparkles, Rocket, CheckCircle, Clock } from 'lucide-react';
 import Image from 'next/image';
 import { CONTACTS } from '@/constants';
 import { allCases } from '@/constants/cases';
@@ -31,7 +31,6 @@ export default function HomePage() {
         { name: 'Дмитрий Сидоров', task: 'Создание CRM-системы' },
         { name: 'Елена Козлова', task: 'Разработка интернет-магазина' },
         { name: 'Иван Смирнов', task: 'Автоматизация бизнес-процессов' },
-        { name: 'Ольга Волкова', task: 'Брендинг и фирменный стиль' },
         { name: 'Сергей Новиков', task: 'Интеграция с внешними сервисами' },
         { name: 'Анна Морозова', task: 'Разработка мобильного приложения' },
         { name: 'Павел Лебедев', task: 'Настройка SEO-продвижения' },
@@ -88,26 +87,6 @@ export default function HomePage() {
             hoverColor: 'from-blue-500/20 to-purple-500/20',
             href: '/uslugi/reklama',
             stats: ['ROI до 500%', 'Снижение стоимости лида на 40%', 'Масштабирование в 3 раза']
-        },
-        {
-            id: 'brending',
-            title: 'Брендинг',
-            subtitle: 'Создаем узнаваемый образ',
-            description: 'Разработка фирменного стиля, логотипов, брендбуков и визуальной идентичности. Помогаем бизнесу выделяться на рынке и создавать эмоциональную связь с аудиторией.',
-            detailedDescription: 'Мы создаем бренды, которые запоминаются. От исследования рынка и позиционирования до полного визуального образа. Разрабатываем стратегию бренда, дизайн-систему и руководство по использованию. Ваш бренд становится инструментом роста.',
-            services: [
-                { name: 'Логотип и фирменный стиль', desc: 'Разработка уникальной визуальной идентичности' },
-                { name: 'Брендбук', desc: 'Руководство по использованию бренда' },
-                { name: 'Позиционирование', desc: 'Стратегия и позиция на рынке' },
-                { name: 'Нейминг', desc: 'Разработка названия и слоганов' },
-                { name: 'Дизайн упаковки', desc: 'Оформление продукции и упаковки' },
-                { name: 'Веб-дизайн', desc: 'Дизайн сайтов и интерфейсов' }
-            ],
-            icon: Palette,
-            color: 'from-purple-500/10 to-pink-500/10',
-            hoverColor: 'from-purple-500/20 to-pink-500/20',
-            href: '/uslugi/brending',
-            stats: ['Узнаваемость бренда +60%', 'Рост лояльности клиентов', 'Единый визуальный образ']
         }
     ];
 
@@ -328,9 +307,9 @@ export default function HomePage() {
             {/* Обзор услуг - 3 полноэкранных блока */}
             {serviceDirections.map((direction, i) => {
                 const Icon = direction.icon;
-                // IT-разработка и Брендинг: текст слева, Spline справа
+                // IT-разработка: текст слева, Spline справа
                 // Реклама: текст справа, Spline слева
-                const isLeft = direction.id === 'razrabotka' || direction.id === 'brending';
+                const isLeft = direction.id === 'razrabotka';
                 
                 return (
                     <section 

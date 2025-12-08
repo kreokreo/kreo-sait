@@ -12,18 +12,17 @@ echo "📦 Обновление системы..."
 apt-get update
 apt-get upgrade -y
 
-# Установка Docker
-if ! command -v docker &> /dev/null; then
-    echo "🐳 Установка Docker..."
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
-    rm get-docker.sh
+# Установка Node.js 20.x
+if ! command -v node &> /dev/null; then
+    echo "📦 Установка Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
 fi
 
-# Установка Docker Compose
-if ! command -v docker-compose &> /dev/null; then
-    echo "🐳 Установка Docker Compose..."
-    apt-get install -y docker-compose-plugin
+# Установка PM2
+if ! command -v pm2 &> /dev/null; then
+    echo "📦 Установка PM2..."
+    npm install -g pm2
 fi
 
 # Установка Nginx
@@ -48,28 +47,10 @@ mkdir -p /var/log/nginx
 chown -R $USER:$USER /opt/kreo-it
 chown -R www-data:www-data /var/www/kreo-it
 
-# Создание systemd service для автоматического запуска
-echo "⚙️ Настройка автозапуска..."
-cat > /etc/systemd/system/kreo-it.service << EOF
-[Unit]
-Description=Kreo IT Docker Compose
-Requires=docker.service
-After=docker.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-WorkingDirectory=/opt/kreo-it
-ExecStart=/usr/bin/docker compose up -d
-ExecStop=/usr/bin/docker compose down
-TimeoutStartSec=0
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable kreo-it.service
+# Настройка PM2 для автозапуска
+echo "⚙️ Настройка автозапуска PM2..."
+pm2 startup systemd -u root --hp /root
+pm2 save
 
 echo "✅ Настройка сервера завершена!"
 echo ""
@@ -78,7 +59,7 @@ echo "1. Настройте DNS записи для домена kreo.pro"
 echo "2. Получите SSL сертификат:"
 echo "   certbot --nginx -d kreo.pro -d www.kreo.pro"
 echo "3. Скопируйте конфигурацию Nginx:"
-echo "   cp docker/nginx-production.conf /etc/nginx/sites-available/kreo.pro"
+echo "   cp nginx/kreo.pro.conf /etc/nginx/sites-available/kreo.pro"
 echo "   ln -s /etc/nginx/sites-available/kreo.pro /etc/nginx/sites-enabled/"
 echo "4. Перезапустите Nginx:"
 echo "   nginx -t && systemctl reload nginx"

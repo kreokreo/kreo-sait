@@ -21,8 +21,8 @@ const nextConfig = {
   devIndicators: {
     position: 'bottom-right',
   },
-  // Для Docker (только для production build)
-  // В production всегда используем standalone для Docker
+  // Standalone режим для оптимизированного production деплоя
+  // Позволяет запускать приложение без node_modules
   output: 'standalone',
   // Исправление проблем с vendor chunks
   webpack: (config, { isServer }) => {

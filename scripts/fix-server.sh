@@ -40,65 +40,28 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << 'EOF'
     set -e
     cd /opt/kreo-it
     
-    echo "=== 1. Проверка статуса контейнера ==="
-    docker ps -a | grep kreo-it-production || echo "Контейнер не найден"
+    echo "=== 1. Проверка статуса PM2 ==="
+    pm2 status kreo-it || echo "Приложение не запущено в PM2"
     
     echo ""
-    echo "=== 2. Остановка и удаление всех старых контейнеров ==="
-    docker stop kreo-it-production 2>/dev/null || true
-    docker rm -f kreo-it-production 2>/dev/null || true
-    docker stop $(docker ps -aq --filter "name=kreo") 2>/dev/null || true
-    docker rm -f $(docker ps -aq --filter "name=kreo") 2>/dev/null || true
+    echo "=== 2. Проверка логов PM2 ==="
+    pm2 logs kreo-it --lines 30 --nostream || echo "Логи недоступны"
     
     echo ""
-    echo "=== 3. Проверка наличия образа ==="
-    docker images | grep kreo-it || echo "Образ не найден"
+    echo "=== 3. Проверка порта 3000 ==="
+    netstat -tlnp 2>/dev/null | grep 3000 || ss -tlnp 2>/dev/null | grep 3000 || echo "Порт 3000 не слушается"
     
     echo ""
-    echo "=== 4. Запуск контейнера ==="
-    if docker images | grep -q "kreo-it.*production"; then
-        docker run -d \
-          --name kreo-it-production \
-          --restart unless-stopped \
-          -p 3001:3000 \
-          -e NODE_ENV=production \
-          -e PORT=3000 \
-          kreo-it:production
-        
-        echo "Ожидание запуска..."
-        sleep 10
-        
-        echo ""
-        echo "=== 5. Проверка статуса ==="
-        docker ps | grep kreo-it-production
-        
-        echo ""
-        echo "=== 6. Проверка логов ==="
-        docker logs kreo-it-production --tail 30
-        
-        echo ""
-        echo "=== 7. Проверка порта 3001 ==="
-        netstat -tlnp 2>/dev/null | grep 3001 || ss -tlnp 2>/dev/null | grep 3001 || echo "Порт не слушается"
-        
-        echo ""
-        echo "=== 8. Проверка доступности изнутри контейнера ==="
-        docker exec kreo-it-production wget -q -O- http://localhost:3000 2>&1 | head -10 || echo "Не отвечает"
-        
-        echo ""
-        echo "=== 9. Проверка доступности с хоста ==="
-        curl -f -s -m 5 http://localhost:3001 2>&1 | head -10 || echo "Не отвечает на localhost:3001"
-    else
-        echo "❌ Образ kreo-it:production не найден!"
-        echo "Нужно сначала задеплоить образ на сервер"
-    fi
+    echo "=== 4. Проверка доступности приложения ==="
+    curl -f -s -m 5 http://localhost:3000 2>&1 | head -10 || echo "Приложение не отвечает на localhost:3000"
     
     echo ""
-    echo "=== 10. Проверка Nginx ==="
+    echo "=== 5. Проверка Nginx ==="
     sudo nginx -t 2>&1
     sudo systemctl status nginx --no-pager -l | head -10 || echo "Nginx не запущен"
     
     echo ""
-    echo "=== 11. Проверка конфигурации Nginx ==="
+    echo "=== 6. Проверка конфигурации Nginx ==="
     if [ -f /etc/nginx/sites-available/kreo.pro ]; then
         echo "Конфигурация найдена:"
         sudo grep -A 3 "location /" /etc/nginx/sites-available/kreo.pro | head -5
@@ -107,8 +70,14 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << 'EOF'
     fi
     
     echo ""
-    echo "=== 12. Логи Nginx (последние 20 строк) ==="
+    echo "=== 7. Логи Nginx (последние 20 строк) ==="
     sudo tail -20 /var/log/nginx/kreo.pro.error.log 2>/dev/null || echo "Логи недоступны"
+    
+    echo ""
+    echo "=== 8. Попытка перезапуска PM2 ==="
+    pm2 restart kreo-it || echo "Не удалось перезапустить приложение"
+    sleep 5
+    pm2 status kreo-it
 EOF
 
 echo ""

@@ -9,10 +9,6 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "docker:build": "docker build --build-arg BUILD_MODE=production -t kreo-it:production .",
-    "docker:up": "docker-compose up -d production",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f production",
     "git:push": "./scripts/git-push.sh",
     "deploy": "./scripts/deploy.sh",
     "setup:server": "./scripts/setup-clean-server.sh"
@@ -70,7 +66,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
-    "@flydotio/dockerfile": "^0.7.8",
     "@types/node": "^22.13.5",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",

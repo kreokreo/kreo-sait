@@ -60,12 +60,24 @@ export default function CasePage({ params }) {
                     </div>
 
                     {/* Заголовок */}
-                    <h1 className="text-4xl md:text-6xl font-bold mb-6">
+                    <h1 className="text-4xl md:text-6xl font-bold mb-4">
                         {caseItem.client}
                     </h1>
 
+                    {/* Описание услуги */}
+                    {caseItem.service && (
+                        <p className="text-lg md:text-xl text-gray-600 mb-6">
+                            {caseItem.service}
+                        </p>
+                    )}
+
                     {/* Метаданные */}
                     <div className="flex flex-wrap gap-6 text-sm text-gray-500 mb-8">
+                        {caseItem.location && (
+                            <div className="flex items-center gap-2">
+                                <span>{caseItem.location}</span>
+                            </div>
+                        )}
                         <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
                             {new Date(caseItem.date).toLocaleDateString('ru-RU', { 
@@ -112,49 +124,185 @@ export default function CasePage({ params }) {
             <section className="px-6 md:px-12 pb-12 md:pb-20">
                 <div className="max-w-4xl mx-auto">
                     <div className="prose prose-lg max-w-none">
-                        {/* Описание */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            className="mb-12"
-                        >
-                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Задача</h2>
-                            <p className="text-lg text-gray-600 leading-relaxed">
-                                {caseItem.description}
-                            </p>
-                        </motion.div>
+                        {/* Расширенный контент с разделами */}
+                        {caseItem.detailedContent ? (
+                            <>
+                                {/* Задача */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    className="mb-12"
+                                >
+                                    <h2 className="text-2xl md:text-3xl font-bold mb-6">С чем клиент пришёл</h2>
+                                    <div className="text-lg text-gray-700 leading-relaxed">
+                                        {caseItem.detailedContent.problem.split('\n\n').map((paragraph, pIdx) => {
+                                            if (!paragraph.trim()) return null;
+                                            const lines = paragraph.split('\n');
+                                            return (
+                                                <div key={pIdx} className="mb-6">
+                                                    {lines.map((line, lIdx) => {
+                                                        const trimmed = line.trim();
+                                                        if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+                                                            return <p key={lIdx} className="font-semibold text-gray-900 mb-3">{trimmed.replace(/\*\*/g, '')}</p>;
+                                                        }
+                                                        if (trimmed) {
+                                                            return <p key={lIdx} className="mb-2">{trimmed}</p>;
+                                                        }
+                                                        return null;
+                                                    })}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
 
-                        {/* Решение */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1 }}
-                            className="mb-12"
-                        >
-                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Решение</h2>
-                            <p className="text-lg text-gray-600 leading-relaxed whitespace-pre-line">
-                                {caseItem.content}
-                            </p>
-                        </motion.div>
+                                {/* Подход */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: 0.1 }}
+                                    className="mb-12"
+                                >
+                                    <h2 className="text-2xl md:text-3xl font-bold mb-6">Как мы к этому подошли</h2>
+                                    <div className="text-lg text-gray-700 leading-relaxed">
+                                        {caseItem.detailedContent.approach.split('\n\n').map((paragraph, pIdx) => {
+                                            if (!paragraph.trim()) return null;
+                                            const lines = paragraph.split('\n');
+                                            return (
+                                                <div key={pIdx} className="mb-6">
+                                                    {lines.map((line, lIdx) => {
+                                                        const trimmed = line.trim();
+                                                        if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+                                                            return <h3 key={lIdx} className="font-semibold text-gray-900 text-xl mt-6 mb-3">{trimmed.replace(/\*\*/g, '')}</h3>;
+                                                        }
+                                                        if (trimmed.startsWith('•')) {
+                                                            return <p key={lIdx} className="ml-4 mb-2">{trimmed}</p>;
+                                                        }
+                                                        if (trimmed.startsWith('-')) {
+                                                            return <p key={lIdx} className="ml-8 mb-2 text-gray-600">{trimmed}</p>;
+                                                        }
+                                                        if (trimmed) {
+                                                            return <p key={lIdx} className="mb-2">{trimmed}</p>;
+                                                        }
+                                                        return null;
+                                                    })}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
 
-                        {/* Результаты */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.2 }}
-                            className="mb-12 p-8 bg-gray-50 rounded-2xl"
-                        >
-                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Результат</h2>
-                            <div className="text-4xl md:text-5xl font-bold text-brand mb-2">
-                                {caseItem.result}
-                            </div>
-                            <p className="text-gray-600">
-                                Достигнуто за период работы: {caseItem.duration}
-                            </p>
-                        </motion.div>
+                                {/* Результаты */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: 0.2 }}
+                                    className="mb-12 p-8 bg-gray-50 rounded-2xl"
+                                >
+                                    <h2 className="text-2xl md:text-3xl font-bold mb-6">Что в итоге получили</h2>
+                                    <div className="text-lg text-gray-700 leading-relaxed">
+                                        {caseItem.detailedContent.result.split('\n').map((line, i) => {
+                                            const trimmed = line.trim();
+                                            if (trimmed.startsWith('•')) {
+                                                return <p key={i} className="ml-4 mb-3">{trimmed}</p>;
+                                            }
+                                            if (trimmed) {
+                                                return <p key={i} className="mb-3">{trimmed}</p>;
+                                            }
+                                            return null;
+                                        })}
+                                    </div>
+                                    <div className="mt-6 pt-6 border-t border-gray-200">
+                                        <div className="text-3xl md:text-4xl font-bold text-brand mb-2">
+                                            {caseItem.result}
+                                        </div>
+                                        <p className="text-gray-600">
+                                            Достигнуто за период работы: {caseItem.duration}
+                                        </p>
+                                    </div>
+                                </motion.div>
+
+                                {/* CTA для клиник */}
+                                {caseItem.detailedContent.cta && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.3 }}
+                                        className="mb-12 p-8 bg-brand/5 rounded-2xl border border-brand/20"
+                                    >
+                                        <h2 className="text-2xl md:text-3xl font-bold mb-6">Если вы тоже владелец клиники</h2>
+                                        <div className="text-lg text-gray-700 leading-relaxed">
+                                            {caseItem.detailedContent.cta.split('\n\n').map((paragraph, pIdx) => {
+                                                if (!paragraph.trim()) return null;
+                                                const lines = paragraph.split('\n');
+                                                return (
+                                                    <div key={pIdx} className="mb-4">
+                                                        {lines.map((line, lIdx) => {
+                                                            const trimmed = line.trim();
+                                                            if (trimmed.startsWith('•')) {
+                                                                return <p key={lIdx} className="ml-4 mb-2">{trimmed}</p>;
+                                                            }
+                                                            if (trimmed) {
+                                                                return <p key={lIdx} className="mb-2">{trimmed}</p>;
+                                                            }
+                                                            return null;
+                                                        })}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {/* Простой формат для старых кейсов */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    className="mb-12"
+                                >
+                                    <h2 className="text-2xl md:text-3xl font-bold mb-4">Задача</h2>
+                                    <p className="text-lg text-gray-600 leading-relaxed">
+                                        {caseItem.description}
+                                    </p>
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: 0.1 }}
+                                    className="mb-12"
+                                >
+                                    <h2 className="text-2xl md:text-3xl font-bold mb-4">Решение</h2>
+                                    <p className="text-lg text-gray-600 leading-relaxed whitespace-pre-line">
+                                        {caseItem.content}
+                                    </p>
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: 0.2 }}
+                                    className="mb-12 p-8 bg-gray-50 rounded-2xl"
+                                >
+                                    <h2 className="text-2xl md:text-3xl font-bold mb-4">Результат</h2>
+                                    <div className="text-4xl md:text-5xl font-bold text-brand mb-2">
+                                        {caseItem.result}
+                                    </div>
+                                    <p className="text-gray-600">
+                                        Достигнуто за период работы: {caseItem.duration}
+                                    </p>
+                                </motion.div>
+                            </>
+                        )}
                     </div>
                 </div>
             </section>

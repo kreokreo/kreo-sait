@@ -141,7 +141,7 @@ import Header from '@/components/layout/Header'
 ### Стилизация
 
 - **Tailwind CSS** - основная система стилей
-- **CSS переменные** - для темизации и брендинга
+- **CSS переменные** - для темизации и кастомизации
 - **Кастомные стили** - в `src/app/globals.css` и `src/styles/typography.css`
 
 ### 3D графика (Spline)
