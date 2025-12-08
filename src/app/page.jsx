@@ -445,7 +445,7 @@ export default function HomePage() {
                                             viewport={{ once: true }}
                                             transition={{ delay: 0.8 }}
                                         >
-                                            <Link href={direction.href} className="group inline-flex items-center gap-2 md:gap-3 px-5 md:px-6 py-2.5 md:py-3 rounded-full text-sm md:text-base font-medium transition-all bg-gray-900 text-white hover:bg-brand">
+                                            <Link href={direction.href} prefetch={false} className="group inline-flex items-center gap-2 md:gap-3 px-5 md:px-6 py-2.5 md:py-3 rounded-full text-sm md:text-base font-medium transition-all bg-gray-900 text-white hover:bg-brand">
                                                 <span>Узнать больше</span>
                                                 <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
                                                     <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-white transition-transform group-hover:translate-x-1" />
