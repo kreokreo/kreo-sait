@@ -39,15 +39,15 @@ export default function Header() {
   return (
     <AnimatePresence>
       {isVisible && (
-        <motion.header
+    <motion.header
           key="header"
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100"
-        >
-          <nav className="container mx-auto px-6 md:px-12 py-4 md:py-6">
+    >
+      <nav className="container mx-auto px-6 md:px-12 py-4 md:py-6">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center">
@@ -133,9 +133,9 @@ export default function Header() {
               })}
             </div>
           </motion.div>
-          )}
-        </nav>
-      </motion.header>
+        )}
+      </nav>
+    </motion.header>
       )}
     </AnimatePresence>
   );

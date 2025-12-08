@@ -82,5 +82,6 @@ npm run deploy
 - **IP**: 46.149.67.149
 - **Пользователь**: root
 - **SSH ключ**: ~/.ssh/kreo_deploy
-- **Пароль root**: bRKSJ8+wuGEi.A (для первого входа)
+
+**Важно**: После переустановки ОС добавьте SSH ключ через веб-консоль Timeweb или используйте скрипт `./scripts/setup-server-ssh.sh`.
 
