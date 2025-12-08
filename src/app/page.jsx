@@ -339,14 +339,6 @@ export default function HomePage() {
                                         style={{ pointerEvents: 'none' }}
                                     />
                                     
-                                    {/* Градиентный оверлей при наведении */}
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: hoveredCase === i ? 1 : 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
-                                    />
-                                    
                                     {/* Иконка стрелки */}
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0 }}
