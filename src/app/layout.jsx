@@ -25,11 +25,11 @@ export const metadata = {
   authors: [{ name: 'Kreo' }],
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon1.png', type: 'image/png' },
       { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
     ],
-    shortcut: '/favicon.ico',
-    apple: '/favicon.svg',
+    shortcut: '/favicon1.png',
+    apple: '/favicon1.png',
   },
   openGraph: {
     title: 'Kreo - IT & AI Agency',

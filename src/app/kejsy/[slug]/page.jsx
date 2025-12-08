@@ -261,46 +261,46 @@ export default function CasePage({ params }) {
                         ) : (
                             <>
                                 {/* Простой формат для старых кейсов */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    className="mb-12"
-                                >
-                                    <h2 className="text-2xl md:text-3xl font-bold mb-4">Задача</h2>
-                                    <p className="text-lg text-gray-600 leading-relaxed">
-                                        {caseItem.description}
-                                    </p>
-                                </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="mb-12"
+                        >
+                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Задача</h2>
+                            <p className="text-lg text-gray-600 leading-relaxed">
+                                {caseItem.description}
+                            </p>
+                        </motion.div>
 
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: 0.1 }}
-                                    className="mb-12"
-                                >
-                                    <h2 className="text-2xl md:text-3xl font-bold mb-4">Решение</h2>
-                                    <p className="text-lg text-gray-600 leading-relaxed whitespace-pre-line">
-                                        {caseItem.content}
-                                    </p>
-                                </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 }}
+                            className="mb-12"
+                        >
+                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Решение</h2>
+                            <p className="text-lg text-gray-600 leading-relaxed whitespace-pre-line">
+                                {caseItem.content}
+                            </p>
+                        </motion.div>
 
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: 0.2 }}
-                                    className="mb-12 p-8 bg-gray-50 rounded-2xl"
-                                >
-                                    <h2 className="text-2xl md:text-3xl font-bold mb-4">Результат</h2>
-                                    <div className="text-4xl md:text-5xl font-bold text-brand mb-2">
-                                        {caseItem.result}
-                                    </div>
-                                    <p className="text-gray-600">
-                                        Достигнуто за период работы: {caseItem.duration}
-                                    </p>
-                                </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                            className="mb-12 p-8 bg-gray-50 rounded-2xl"
+                        >
+                            <h2 className="text-2xl md:text-3xl font-bold mb-4">Результат</h2>
+                            <div className="text-4xl md:text-5xl font-bold text-brand mb-2">
+                                {caseItem.result}
+                            </div>
+                            <p className="text-gray-600">
+                                Достигнуто за период работы: {caseItem.duration}
+                            </p>
+                        </motion.div>
                             </>
                         )}
                     </div>
