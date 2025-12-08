@@ -143,10 +143,17 @@ ssh -i "$SERVER_SSH_KEY" -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" << EOF
     
     echo ""
     echo "=== Копирование статических файлов для standalone режима ==="
-    if [ -d ".next/standalone" ] && [ -d ".next/static" ]; then
-        echo "Копируем статические файлы в standalone..."
-        cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
-        echo "✅ Статические файлы скопированы"
+    if [ -d ".next/standalone" ]; then
+        if [ -d ".next/static" ]; then
+            echo "Копируем статические файлы в standalone..."
+            cp -r .next/static .next/standalone/.next/ 2>/dev/null || true
+            echo "✅ Статические файлы скопированы"
+        fi
+        if [ -d "public" ]; then
+            echo "Копируем public директорию в standalone..."
+            cp -r public .next/standalone/ 2>/dev/null || true
+            echo "✅ Public директория скопирована"
+        fi
     fi
     
     echo ""
