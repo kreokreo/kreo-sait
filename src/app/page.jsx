@@ -1,14 +1,16 @@
 'use client'
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, TrendingUp, Users, Award, Play, CheckCircle2, Zap, DollarSign, Sparkles, Rocket, CheckCircle, Clock } from 'lucide-react';
 import Image from 'next/image';
 import { CONTACTS } from '@/constants';
-import { allCases } from '@/constants/cases';
+import { getHomePageCases } from '@/lib/cases';
 import dynamic from 'next/dynamic';
 import { Suspense, useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import LeadForm from '@/components/LeadForm';
+import { CaseGrid } from '@/components/cases';
 
 // Динамическая загрузка Spline Viewer с отключением SSR
 const SplineViewer = dynamic(
@@ -19,25 +21,161 @@ const SplineViewer = dynamic(
   }
 );
 
+// Компонент для видео/фото отзыва
+function TestimonialItem({ item }) {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isImageExpanded, setIsImageExpanded] = useState(false);
+    const [mounted, setMounted] = useState(false);
+    const videoRef = useRef(null);
+    
+    // Проверка монтирования для Portal
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+    
+    // Закрытие по Escape и блокировка скролла
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isImageExpanded) {
+                setIsImageExpanded(false);
+            }
+        };
+        
+        if (isImageExpanded) {
+            document.addEventListener('keydown', handleEscape);
+            // Блокируем скролл
+            document.body.style.overflow = 'hidden';
+            // Убеждаемся, что курсор виден
+            document.body.style.cursor = 'default';
+        }
+        
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = '';
+            document.body.style.cursor = '';
+        };
+    }, [isImageExpanded]);
+    
+    return (
+        <>
+            <div
+                className="flex-shrink-0 w-1/2 md:w-1/3 lg:w-1/5 group cursor-pointer"
+                onClick={() => {
+                    if (item.type === 'video' && videoRef.current) {
+                        if (isPlaying) {
+                            videoRef.current.pause();
+                            setIsPlaying(false);
+                        } else {
+                            videoRef.current.play();
+                            setIsPlaying(true);
+                        }
+                    } else if (item.type === 'image') {
+                        setIsImageExpanded(true);
+                    }
+                }}
+            >
+                {/* Видео/Фото-кружок */}
+                <div className="relative aspect-square rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-200 group-hover:border-brand/50 transition-all mx-auto" style={{ maxWidth: '280px' }}>
+                    {item.type === 'video' ? (
+                        <>
+                            <video
+                                ref={videoRef}
+                                className="w-full h-full object-cover"
+                                src={item.src}
+                                loop
+                                playsInline
+                                preload="metadata"
+                            />
+                            {/* Иконка Play */}
+                            {!isPlaying && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-all">
+                                    <Play className="w-8 h-8 md:w-12 md:h-12 text-white/90 group-hover:text-brand transition-colors" />
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <img
+                            className="w-full h-full object-cover"
+                            src={item.src}
+                            alt="Отзыв"
+                        />
+                    )}
+                    {/* Декоративный градиент при наведении */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/0 group-hover:from-brand/10 group-hover:to-brand/5 transition-all" />
+                </div>
+            </div>
+            
+            {/* Модальное окно с увеличенным изображением - рендерится через Portal */}
+            {mounted && createPortal(
+                <AnimatePresence>
+                    {isImageExpanded && item.type === 'image' && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 cursor-pointer"
+                            style={{
+                                background: 'rgba(0, 0, 0, 0.85)',
+                                backdropFilter: 'blur(8px)'
+                            }}
+                            onClick={() => setIsImageExpanded(false)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                                className="relative max-w-2xl w-full max-h-[80vh] bg-white rounded-2xl shadow-2xl overflow-hidden cursor-default"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="relative w-full h-full flex items-center justify-center p-4">
+                                    <img
+                                        className="w-full h-full object-contain rounded-lg"
+                                        src={item.src}
+                                        alt="Отзыв"
+                                    />
+                                </div>
+                                <button
+                                    onClick={() => setIsImageExpanded(false)}
+                                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/95 hover:bg-white shadow-lg flex items-center justify-center transition-all hover:scale-110 z-10 cursor-pointer"
+                                    aria-label="Закрыть"
+                                >
+                                    <svg
+                                        className="w-5 h-5 text-gray-900"
+                                        fill="none"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+        </>
+    );
+}
+
 export default function HomePage() {
     const splineBlockRef = useRef(null);
     const [hoveredService, setHoveredService] = useState(null);
     const [carouselIndex, setCarouselIndex] = useState(0);
     const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
-    const [hoveredCase, setHoveredCase] = useState(null);
-    const videoRefs = useRef({});
-    const reverseAnimationRefs = useRef({});
     
     const testimonials = [
-        { name: 'Алексей Петров', task: 'Разработка корпоративного сайта' },
-        { name: 'Мария Иванова', task: 'Настройка рекламы в Яндекс.Директ' },
-        { name: 'Дмитрий Сидоров', task: 'Создание CRM-системы' },
-        { name: 'Елена Козлова', task: 'Разработка интернет-магазина' },
-        { name: 'Иван Смирнов', task: 'Автоматизация бизнес-процессов' },
-        { name: 'Сергей Новиков', task: 'Интеграция с внешними сервисами' },
-        { name: 'Анна Морозова', task: 'Разработка мобильного приложения' },
-        { name: 'Павел Лебедев', task: 'Настройка SEO-продвижения' },
-        { name: 'Татьяна Соколова', task: 'Создание чат-бота для поддержки' }
+        { type: 'video', src: '/Videos/1.mp4' },
+        { type: 'video', src: '/Videos/2.mp4' },
+        { type: 'video', src: '/Videos/3.MP4' },
+        { type: 'video', src: '/Videos/4.mp4' },
+        { type: 'video', src: '/Videos/5.mp4' },
+        { type: 'image', src: '/Videos/6.png' }
     ];
     
     // Бесконечная карусель
@@ -115,117 +253,8 @@ export default function HomePage() {
         }
     ];
 
-    // Проекты (наши собственные продукты)
-    const ourProjects = [
-        {
-            id: 'project-1',
-            slug: 'project-1',
-            client: 'Проект 1',
-            title: 'Инновационное решение для бизнеса',
-            description: 'Собственный продукт в разработке',
-            image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
-            result: 'В разработке',
-            service: 'Наш продукт',
-            tags: ['AI', 'Автоматизация', 'SaaS'],
-            isOurProject: true
-        },
-        {
-            id: 'project-2',
-            slug: 'project-2',
-            client: 'Проект 2',
-            title: 'Платформа для эффективной работы',
-            description: 'Собственный продукт в разработке',
-            image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015&auto=format&fit=crop&ixlib=rb-4.0.3',
-            result: 'В разработке',
-            service: 'Наш продукт',
-            tags: ['Платформа', 'B2B', 'Интеграции'],
-            isOurProject: true
-        },
-        {
-            id: 'project-3',
-            slug: 'project-3',
-            client: 'Проект 3',
-            title: 'Сервис нового поколения',
-            description: 'Собственный продукт в разработке',
-            image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
-            result: 'В разработке',
-            service: 'Наш продукт',
-            tags: ['Сервис', 'Мобильное', 'Cloud'],
-            isOurProject: true
-        }
-    ];
-
-    // Превью кейсов (первые 6) + наши проекты (3) = 9 всего (3 строки)
-    const cases = [...allCases.slice(0, 6), ...ourProjects];
-
-    // Управление видео анимацией
-    useEffect(() => {
-        const totalCases = allCases.slice(0, 6).length + ourProjects.length;
-        
-        for (let i = 0; i < totalCases; i++) {
-            const video = videoRefs.current[i];
-            if (!video) continue;
-
-            // Останавливаем обратную анимацию если она была запущена
-            if (reverseAnimationRefs.current[i]) {
-                cancelAnimationFrame(reverseAnimationRefs.current[i]);
-                reverseAnimationRefs.current[i] = null;
-            }
-
-            if (hoveredCase === i) {
-                // При наведении - проигрываем вперед
-                const playForward = () => {
-                    if (video.readyState >= 2) { // HAVE_CURRENT_DATA
-                        video.currentTime = 0;
-                        video.play().catch(() => {});
-                        
-                        // Останавливаем на последнем кадре
-                        const handleTimeUpdate = () => {
-                            if (video.currentTime >= video.duration - 0.05) {
-                                video.pause();
-                                video.currentTime = video.duration;
-                                video.removeEventListener('timeupdate', handleTimeUpdate);
-                            }
-                        };
-                        video.addEventListener('timeupdate', handleTimeUpdate);
-                    } else {
-                        // Ждем загрузки видео
-                        video.addEventListener('loadeddata', playForward, { once: true });
-                    }
-                };
-                playForward();
-            } else {
-                // Если мышь ушла или наведен другой кейс - возвращаем к началу
-                const reversePlay = () => {
-                    if (video.currentTime > 0) {
-                        video.currentTime = Math.max(0, video.currentTime - 0.05); // плавная обратная перемотка
-                        reverseAnimationRefs.current[i] = requestAnimationFrame(reversePlay);
-                    } else {
-                        video.pause();
-                        video.currentTime = 0;
-                        reverseAnimationRefs.current[i] = null;
-                    }
-                };
-                if (video.currentTime > 0) {
-                    reverseAnimationRefs.current[i] = requestAnimationFrame(reversePlay);
-                } else {
-                    // Убеждаемся что видео на первом кадре
-                    video.pause();
-                    video.currentTime = 0;
-                }
-            }
-        }
-        
-        // Cleanup при размонтировании
-        return () => {
-            for (let i = 0; i < totalCases; i++) {
-                if (reverseAnimationRefs.current[i]) {
-                    cancelAnimationFrame(reverseAnimationRefs.current[i]);
-                    reverseAnimationRefs.current[i] = null;
-                }
-            }
-        };
-    }, [hoveredCase]);
+    // Получаем кейсы для главной страницы (первые 6 + наши проекты)
+    const cases = getHomePageCases(6, true);
 
     return (
         <div className="flex flex-col">
@@ -262,7 +291,7 @@ export default function HomePage() {
                 </motion.div>
 
                 {/* Надпись в правом нижнем углу за сплайном */}
-                <div className="absolute bottom-8 right-12 md:bottom-16 md:right-24 z-[5] pointer-events-none">
+                <div className="absolute bottom-8 right-12 md:bottom-16 md:right-24 z-40 pointer-events-none">
                     <p className="text-xs md:text-sm font-medium text-gray-900 opacity-30">IT & AI Agency</p>
                 </div>
 
@@ -294,237 +323,136 @@ export default function HomePage() {
                         </Link>
                     </div>
                 </motion.div>
-            </section>
 
-            {/* Кейсы */}
-            <section className="relative w-full bg-white">
-                <div className="grid grid-cols-1 md:grid-cols-3">
-                        {cases.map((item, i) => (
-                            <motion.div
-                                key={i}
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true, margin: "-50px" }}
-                            transition={{ delay: i * 0.1, duration: 0.6 }}
-                            className="group relative overflow-hidden"
-                            onMouseEnter={() => setHoveredCase(i)}
-                            onMouseLeave={() => setHoveredCase(null)}
-                        >
-                            <Link href={`/kejsy/${item.slug}`} className="block w-full h-full">
-                                {/* Видео контейнер */}
-                                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                                    {/* Видео анимация - всегда видимое, показывает первый кадр по умолчанию */}
-                                    <video
-                                        ref={(el) => {
-                                            if (el) {
-                                                videoRefs.current[i] = el;
-                                                // Устанавливаем первый кадр при загрузке
-                                                const initVideo = () => {
-                                                    el.currentTime = 0;
-                                                    el.pause();
-                                                };
-                                                if (el.readyState >= 2) {
-                                                    initVideo();
-                                                } else {
-                                                    el.addEventListener('loadeddata', initVideo, { once: true });
-                                                    el.addEventListener('loadedmetadata', initVideo, { once: true });
-                                                }
-                                            }
-                                        }}
-                                        src="/animations/Dental animation.webm"
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                        muted
-                                        playsInline
-                                        preload="metadata"
-                                        style={{ pointerEvents: 'none' }}
-                                    />
-                                    
-                                    {/* Иконка стрелки */}
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        animate={{ 
-                                            opacity: hoveredCase === i ? 1 : 0,
-                                            scale: hoveredCase === i ? 1 : 0
-                                        }}
-                                        transition={{ duration: 0.3 }}
-                                        className="absolute top-4 right-4"
-                                    >
-                                        <div className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center">
-                                            <ArrowRight className="w-5 h-5 text-brand" />
-                                        </div>
-                                    </motion.div>
-
-                                    </div>
-
-                                {/* Контент */}
-                                <div className={`p-6 bg-white ${item.isOurProject ? 'bg-gradient-to-b from-white to-brand/5' : ''}`}>
-                                    {/* Теги */}
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {item.tags.slice(0, 3).map(tag => (
-                                            <span
-                                                key={tag}
-                                                className="px-2 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600"
-                                            >
-                                                {tag}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    <div className="mb-3">
-                                        <h3 className="text-xl font-bold mb-1 group-hover:text-brand transition-colors">
-                                            {item.client}
-                                        </h3>
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs text-gray-500 font-mono">{item.service}</p>
-                                        <motion.div
-                                            whileHover={{ x: 5 }}
-                                            className="text-brand"
-                                        >
-                                            <ArrowRight className="w-4 h-4" />
-                                        </motion.div>
-                                    </div>
-                                </div>
-                            </Link>
-                        </motion.div>
-                    ))}
+                {/* Белое свечение снизу для плавного перехода */}
+                <div className="absolute bottom-0 left-0 right-0 h-80 md:h-[400px] z-30 pointer-events-none">
+                    <div 
+                        className="absolute inset-0"
+                        style={{
+                            background: 'linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.85) 20%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0.2) 75%, rgba(255, 255, 255, 0) 100%)'
+                        }}
+                    />
                 </div>
             </section>
 
-            {/* Обзор услуг - 3 полноэкранных блока */}
-            {serviceDirections.map((direction, i) => {
-                const Icon = direction.icon;
-                // IT-разработка: текст слева, Spline справа
-                // Реклама: текст справа, Spline слева
-                const isLeft = direction.id === 'razrabotka';
-                
-                return (
-                    <section 
-                        key={direction.id}
-                        className={`relative w-full md:min-h-screen overflow-hidden transition-colors duration-150 ${hoveredService === direction.id ? 'bg-brand/5' : 'bg-transparent'}`}
+            {/* Кейсы */}
+            <section className="relative w-full bg-white -mt-32 md:-mt-48">
+                <div className="pt-32 md:pt-48">
+                    <CaseGrid cases={cases} showVideo={true} />
+                </div>
+            </section>
+
+            {/* Обзор услуг - 2 колонки */}
+            <section className="relative w-full overflow-hidden py-20 md:py-32">
+                <div className="container mx-auto px-6 md:px-16 lg:px-24">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true, margin: "-100px" }}
+                        className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16"
                     >
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true, margin: "-100px" }}
-                            onMouseEnter={() => setHoveredService(direction.id)}
-                            onMouseLeave={() => setHoveredService(null)}
-                            className={`relative z-10 w-full flex flex-col md:min-h-screen md:flex-row ${isLeft ? 'md:flex-row' : 'md:flex-row-reverse'} min-h-[600px] md:min-h-screen`}
-                        >
-                                {/* Контентная часть */}
-                                <div className={`relative z-20 w-full md:w-1/2 flex items-center py-6 md:py-0 ${isLeft ? 'justify-start px-6 md:pl-16 lg:pl-24' : 'justify-end px-6 md:pr-16 lg:pr-24'}`}>
-                                <motion.div
-                                    className="w-full"
-                                >
-                                    <div className="max-w-2xl">
-                                        <motion.div
-                                            initial={{ opacity: 0, x: isLeft ? -30 : 30 }}
-                                            whileInView={{ opacity: 1, x: 0 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: 0.2 }}
-                                            className="mb-6"
-                                        >
-                                            <p className="font-mono text-sm text-gray-500 mb-2">Направление</p>
-                                            <h2 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-4">
-                                                {direction.title}
-                                            </h2>
-                                            <p className="text-lg md:text-xl lg:text-2xl text-gray-400 mb-6 md:mb-8">
-                                                {direction.subtitle}
-                                            </p>
-                                        </motion.div>
+                        {serviceDirections.map((direction, i) => {
+                            const Icon = direction.icon;
+                            
+                            return (
+                                <div key={direction.id} className="relative">
+                                    {/* Заголовок сверху блока */}
+                                    <motion.h2
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: i * 0.2 }}
+                                        className="text-4xl md:text-5xl font-bold mb-6 text-brand"
+                                    >
+                                        {direction.title}
+                                    </motion.h2>
+                                    
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 30 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: i * 0.2 + 0.1 }}
+                                        onMouseEnter={() => setHoveredService(direction.id)}
+                                        onMouseLeave={() => setHoveredService(null)}
+                                        className="relative p-8 md:p-10 rounded-2xl border border-brand/20 bg-gradient-to-br from-brand/5 to-white shadow-sm hover:shadow-xl hover:border-brand/30 transition-all duration-300"
+                                    >
+                                        {/* Подзаголовок и описание */}
+                                        <div className="mb-6">
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20 }}
+                                                whileInView={{ opacity: 1, y: 0 }}
+                                                viewport={{ once: true }}
+                                                transition={{ delay: 0.1 }}
+                                            >
+                                                <p className="text-lg md:text-xl text-gray-400 mb-6">
+                                                    {direction.subtitle}
+                                                </p>
+                                            </motion.div>
 
                                         <motion.div
                                             initial={{ opacity: 0, y: 20 }}
                                             whileInView={{ opacity: 1, y: 0 }}
                                             viewport={{ once: true }}
-                                            transition={{ delay: 0.3 }}
-                                            className="space-y-4 md:space-y-6"
+                                            transition={{ delay: 0.2 }}
+                                            className="space-y-3"
                                         >
-                                            <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+                                            <p className="text-base text-gray-600 leading-relaxed">
                                                 {direction.description}
                                             </p>
-                                            <p className="text-sm md:text-base text-gray-500 leading-relaxed">
+                                            <p className="text-sm text-gray-500 leading-relaxed">
                                                 {direction.detailedDescription}
                                             </p>
                                         </motion.div>
                                     </div>
+
+                                    {/* Список услуг */}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.3 }}
+                                        className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6"
+                                    >
+                                        {direction.services.map((service, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                whileInView={{ opacity: 1, scale: 1 }}
+                                                viewport={{ once: true }}
+                                                whileHover={{ 
+                                                    y: -5,
+                                                    transition: { duration: 0.15, ease: "easeOut" }
+                                                }}
+                                                transition={{ delay: 0.4 + idx * 0.05, duration: 0.3 }}
+                                                className="p-3 md:p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 hover:border-brand/30 transition-colors duration-150"
+                                            >
+                                                <h4 className="font-semibold text-xs md:text-sm mb-1">{service.name}</h4>
+                                                <p className="text-xs text-gray-500 leading-tight">{service.desc}</p>
+                                            </motion.div>
+                                        ))}
+                                    </motion.div>
+
+                                    {/* CTA */}
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        whileInView={{ opacity: 1 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.7 }}
+                                    >
+                                        <Link href={direction.href} prefetch={false} className="group inline-flex items-center gap-2 md:gap-3 px-5 md:px-6 py-2.5 md:py-3 rounded-full text-sm md:text-base font-medium transition-all bg-gray-900 text-white hover:bg-brand">
+                                            <span>Узнать больше</span>
+                                            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                                                <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-white transition-transform group-hover:translate-x-1" />
+                                            </div>
+                                        </Link>
+                                    </motion.div>
                                 </motion.div>
                                 </div>
-
-                                {/* Визуальная часть - список услуг, статистика и CTA */}
-                                <div className={`relative z-10 w-full md:w-1/2 flex items-center py-6 md:py-0 ${isLeft ? 'px-6 md:pr-16 lg:pr-24' : 'px-6 md:pl-16 lg:pl-24'}`}>
-                                    <div className="w-full space-y-6 md:space-y-8">
-                                        {/* Список услуг */}
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 20 }}
-                                            whileInView={{ opacity: 1, y: 0 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: 0.4 }}
-                                            className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4"
-                                        >
-                                            {direction.services.map((service, idx) => (
-                                                <motion.div
-                                                    key={idx}
-                                                    initial={{ opacity: 0, scale: 0.9 }}
-                                                    whileInView={{ opacity: 1, scale: 1 }}
-                                                    viewport={{ once: true }}
-                                                    whileHover={{ 
-                                                        scale: 1.05, 
-                                                        y: -5,
-                                                        transition: { duration: 0.15, ease: "easeOut" }
-                                                    }}
-                                                    transition={{ delay: 0.5 + idx * 0.05, duration: 0.3 }}
-                                                    className="p-3 md:p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 hover:border-brand/30 transition-colors duration-150"
-                                                >
-                                                    <h4 className="font-semibold text-xs md:text-sm mb-1">{service.name}</h4>
-                                                    <p className="text-xs text-gray-500 leading-tight">{service.desc}</p>
-                                                </motion.div>
-                                            ))}
-                                        </motion.div>
-
-                                        {/* Статистика */}
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            whileInView={{ opacity: 1 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: 0.6 }}
-                                            className="flex flex-wrap gap-2 md:gap-4"
-                                        >
-                                            {direction.stats.map((stat, idx) => (
-                                                <motion.div
-                                                    key={idx}
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    whileInView={{ opacity: 1, y: 0 }}
-                                                    viewport={{ once: true }}
-                                                    transition={{ delay: 0.7 + idx * 0.1 }}
-                                                    className="px-3 md:px-4 py-1.5 md:py-2 bg-brand/10 rounded-full border border-brand/20"
-                                                >
-                                                    <span className="text-xs md:text-sm font-medium text-brand">{stat}</span>
-                                                </motion.div>
-                                            ))}
-                                        </motion.div>
-
-                                        {/* CTA */}
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            whileInView={{ opacity: 1 }}
-                                            viewport={{ once: true }}
-                                            transition={{ delay: 0.8 }}
-                                        >
-                                            <Link href={direction.href} prefetch={false} className="group inline-flex items-center gap-2 md:gap-3 px-5 md:px-6 py-2.5 md:py-3 rounded-full text-sm md:text-base font-medium transition-all bg-gray-900 text-white hover:bg-brand">
-                                                <span>Узнать больше</span>
-                                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                                                    <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4 text-white transition-transform group-hover:translate-x-1" />
-                                                </div>
-                                            </Link>
-                                        </motion.div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                    </section>
-                );
-            })}
+                            );
+                        })}
+                    </motion.div>
+                </div>
+            </section>
 
             {/* УТП - Почему мы digital AI агентство */}
             <section className="relative px-6 md:px-16 lg:px-24 py-20 md:py-32">
@@ -864,35 +792,13 @@ export default function HomePage() {
                         {/* Контейнер карусели */}
                         <div className="overflow-hidden w-full">
                             <motion.div
-                                className="flex"
-                                animate={{ x: `-${carouselIndex * (100 / 5)}%` }}
+                                className="flex gap-1 md:gap-2"
+                                animate={{ x: `-${carouselIndex * (100 / 6)}%` }}
                                 transition={{ duration: 0.5, ease: "easeInOut" }}
                             >
                                 {/* Дублируем элементы для бесконечной прокрутки */}
                                 {[...testimonials, ...testimonials, ...testimonials].map((item, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="flex-shrink-0 w-1/2 md:w-1/3 lg:w-1/5 group cursor-pointer"
-                                    >
-                                        {/* Видео-кружок */}
-                                        <div className="relative aspect-square rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 mb-3 md:mb-4 border-2 border-gray-200 group-hover:border-brand/50 transition-all mx-auto" style={{ maxWidth: '200px' }}>
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <Play className="w-8 h-8 md:w-12 md:h-12 text-gray-400 group-hover:text-brand transition-colors" />
-                                            </div>
-                                            {/* Декоративный градиент при наведении */}
-                                            <div className="absolute inset-0 bg-gradient-to-br from-brand/0 to-brand/0 group-hover:from-brand/10 group-hover:to-brand/5 transition-all" />
-                                        </div>
-                                        
-                                        {/* Описание */}
-                                        <div className="text-center">
-                                            <p className="text-sm md:text-base font-semibold text-gray-900 mb-1">
-                                                {item.name}
-                                            </p>
-                                            <p className="text-xs md:text-sm text-gray-500 leading-tight">
-                                                {item.task}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    <TestimonialItem key={idx} item={item} />
                                 ))}
                             </motion.div>
                         </div>

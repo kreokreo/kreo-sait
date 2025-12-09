@@ -5,24 +5,20 @@ import { notFound } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 import Link from 'next/link';
-import { allCases } from '@/constants/cases';
+import { getCaseBySlug, getRelatedCases } from '@/lib/cases';
 import { CONTACTS } from '@/constants';
+import { CaseCard } from '@/components/cases';
 
 export default function CasePage({ params }) {
     const { slug } = use(params);
-    const caseItem = allCases.find(c => c.slug === slug);
+    const caseItem = getCaseBySlug(slug);
 
     if (!caseItem) {
         notFound();
     }
 
     // Похожие кейсы (по тегам)
-    const relatedCases = allCases
-        .filter(c => 
-            c.id !== caseItem.id && 
-            c.tags.some(tag => caseItem.tags.includes(tag))
-        )
-        .slice(0, 3);
+    const relatedCases = getRelatedCases(caseItem.id, 3);
 
     return (
         <div className="min-h-screen bg-white">
@@ -336,39 +332,12 @@ export default function CasePage({ params }) {
                         <h2 className="text-3xl md:text-4xl font-bold mb-8">Похожие кейсы</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {relatedCases.map((relatedCase, i) => (
-                                <motion.div
+                                <CaseCard
                                     key={relatedCase.id}
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="group"
-                                >
-                                    <Link href={`/kejsy/${relatedCase.slug}`}>
-                                        <div className="rounded-xl border border-gray-100 hover:border-brand/30 overflow-hidden transition-all">
-                                            <div className="aspect-[4/3] overflow-hidden bg-gray-100">
-                                                <img
-                                                    src={relatedCase.image}
-                                                    alt={relatedCase.client}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                />
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="font-semibold text-lg mb-2 group-hover:text-brand transition-colors">
-                                                    {relatedCase.client}
-                                                </h3>
-                                                <p className="text-sm text-gray-500 mb-3">{relatedCase.result}</p>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {relatedCase.tags.slice(0, 2).map(tag => (
-                                                        <span key={tag} className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600">
-                                                            {tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
+                                    caseItem={relatedCase}
+                                    index={i}
+                                    variant="related"
+                                />
                             ))}
                         </div>
                     </div>

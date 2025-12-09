@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, X, Calendar, Clock, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { allCases, getAllTags } from '@/constants/cases';
+import { Search, X } from 'lucide-react';
+import { getAllTags } from '@/constants/cases';
+import { getFilteredCases } from '@/lib/cases';
+import { CaseCard } from '@/components/cases';
 
 export default function CasesPage() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -13,19 +14,9 @@ export default function CasesPage() {
 
     // Фильтрация кейсов
     const filteredCases = useMemo(() => {
-        return allCases.filter(caseItem => {
-            // Поиск по тексту
-            const matchesSearch = searchQuery === '' || 
-                caseItem.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                caseItem.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                caseItem.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                caseItem.service.toLowerCase().includes(searchQuery.toLowerCase());
-
-            // Фильтрация по тегам
-            const matchesTags = selectedTags.length === 0 || 
-                selectedTags.some(tag => caseItem.tags.includes(tag));
-
-            return matchesSearch && matchesTags;
+        return getFilteredCases({
+            searchQuery,
+            tags: selectedTags
         });
     }, [searchQuery, selectedTags]);
 
@@ -137,84 +128,12 @@ export default function CasesPage() {
                 ) : (
                     <div className="max-w-7xl mx-auto space-y-8">
                         {filteredCases.map((caseItem, i) => (
-                            <motion.article
+                            <CaseCard
                                 key={caseItem.id}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-50px" }}
-                                transition={{ delay: i * 0.1 }}
-                                className="group"
-                            >
-                                <Link href={`/kejsy/${caseItem.slug}`}>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8 rounded-2xl border border-gray-100 hover:border-brand/30 hover:shadow-lg transition-all">
-                                        {/* Изображение */}
-                                        <div className="aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">
-                                            <motion.img
-                                                src={caseItem.image}
-                                                alt={caseItem.client}
-                                                className="w-full h-full object-cover"
-                                                whileHover={{ scale: 1.05 }}
-                                                transition={{ duration: 0.3 }}
-                                            />
-                                        </div>
-
-                                        {/* Контент */}
-                                        <div className="md:col-span-2 flex flex-col justify-between">
-                                            <div>
-                                                {/* Теги */}
-                                                <div className="flex flex-wrap gap-2 mb-4">
-                                                    {caseItem.tags.map(tag => (
-                                                        <span
-                                                            key={tag}
-                                                            className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600"
-                                                        >
-                                                            {tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-
-                                                {/* Заголовок */}
-                                                <h2 className="text-2xl md:text-3xl font-bold mb-3 group-hover:text-brand transition-colors">
-                                                    {caseItem.client}
-                                                </h2>
-
-                                                {/* Описание */}
-                                                <p className="text-gray-600 mb-4 leading-relaxed">
-                                                    {caseItem.description}
-                                                </p>
-
-                                                {/* Метаданные */}
-                                                <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar className="w-4 h-4" />
-                                                        {new Date(caseItem.date).toLocaleDateString('ru-RU', { 
-                                                            year: 'numeric', 
-                                                            month: 'long' 
-                                                        })}
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Clock className="w-4 h-4" />
-                                                        {caseItem.duration}
-                                                    </div>
-                                                </div>
-
-                                                {/* Результат */}
-                                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand/10 rounded-full mb-4">
-                                                    <span className="font-mono text-sm font-bold text-brand">
-                                                        {caseItem.result}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* CTA */}
-                                            <div className="flex items-center gap-2 text-brand group-hover:gap-4 transition-all">
-                                                <span className="text-sm font-medium">Читать кейс</span>
-                                                <ArrowRight className="w-4 h-4" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
-                            </motion.article>
+                                caseItem={caseItem}
+                                index={i}
+                                variant="list"
+                            />
                         ))}
                     </div>
                 )}
