@@ -44,9 +44,9 @@ export default function CaseCard({
                 className="group"
             >
                 <Link href={`/kejsy/${caseItem.slug}`}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8 rounded-2xl border border-gray-100 hover:border-brand/30 hover:shadow-lg transition-all">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8 rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md hover:border-brand/30 hover:bg-white/20 hover:shadow-lg transition-all">
                         {/* Изображение */}
-                        <div className="aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">
+                        <div className="aspect-[4/3] overflow-hidden rounded-xl bg-white/5">
                             <motion.img
                                 src={caseItem.image}
                                 alt={caseItem.client}
@@ -64,7 +64,7 @@ export default function CaseCard({
                                     {caseItem.tags?.slice(0, 3).map(tag => (
                                         <span
                                             key={tag}
-                                            className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600"
+                                            className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium text-gray-600"
                                         >
                                             {tag}
                                         </span>
@@ -77,7 +77,7 @@ export default function CaseCard({
                                 </h2>
 
                                 {/* Описание */}
-                                <p className="text-gray-600 mb-4 leading-relaxed">
+                                <p className="text-gray-700 mb-4 leading-relaxed">
                                     {caseItem.description}
                                 </p>
 
@@ -111,8 +111,8 @@ export default function CaseCard({
                 className="group"
             >
                 <Link href={`/kejsy/${caseItem.slug}`}>
-                    <div className="rounded-xl border border-gray-100 hover:border-brand/30 overflow-hidden transition-all">
-                        <div className="aspect-[4/3] overflow-hidden bg-gray-100">
+                    <div className="rounded-xl border border-white/20 bg-white/10 backdrop-blur-md hover:border-brand/30 hover:bg-white/20 overflow-hidden transition-all">
+                        <div className="aspect-[4/3] overflow-hidden bg-white/5">
                             <img
                                 src={caseItem.image}
                                 alt={caseItem.client}
@@ -123,10 +123,10 @@ export default function CaseCard({
                             <h3 className="font-semibold text-lg mb-2 group-hover:text-brand transition-colors">
                                 {caseItem.client}
                             </h3>
-                            <p className="text-sm text-gray-500 mb-3">{caseItem.result}</p>
+                            <p className="text-sm text-gray-600 mb-3">{caseItem.result}</p>
                             <div className="flex flex-wrap gap-1">
                                 {caseItem.tags?.slice(0, 2).map(tag => (
-                                    <span key={tag} className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600">
+                                    <span key={tag} className="text-xs px-2 py-1 bg-white/20 backdrop-blur-sm rounded text-gray-700">
                                         {tag}
                                     </span>
                                 ))}
@@ -145,7 +145,7 @@ export default function CaseCard({
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: "-50px" }}
             transition={{ delay: index * 0.1, duration: 0.6 }}
-            className="group relative overflow-hidden"
+            className="group relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md hover:border-brand/30 hover:bg-white/20 transition-all"
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
         >
@@ -167,20 +167,10 @@ export default function CaseCard({
             >
                 {/* Видео/Изображение контейнер */}
                 <div 
-                    className={`relative aspect-[4/3] overflow-hidden bg-gray-100 ${
-                        caseItem.id === 'win-win' || caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall' || caseItem.id === 'velorra' || caseItem.id === 'rubik' || caseItem.id === 'selfler' ? 'bg-white' : ''
+                    className={`relative aspect-[4/3] overflow-hidden bg-white/5 ${
+                        caseItem.id === 'win-win' || caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall' || caseItem.id === 'velorra' || caseItem.id === 'rubik' || caseItem.id === 'selfler' ? 'bg-white/10' : ''
                     }`}
                 >
-                    {/* Внутренний контейнер с рамкой для кейсов без видео */}
-                    {!showVideo || !caseItem.animation ? (
-                        <div className={`absolute rounded-xl border border-gray-200/60 pointer-events-none z-10 overflow-hidden ${
-                            caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall'
-                                ? 'inset-4 md:inset-5'
-                                : caseItem.id === 'win-win'
-                                ? 'inset-3 md:inset-4'
-                                : 'inset-2 md:inset-3'
-                        }`} />
-                    ) : null}
                     {showVideo && caseItem.animation ? (
                         <video
                             ref={videoRefCallback}
@@ -194,22 +184,14 @@ export default function CaseCard({
                             preload="metadata"
                         />
                     ) : (
-                        /* Контейнер для изображения с ограничением прокрутки */
-                        <div className={`absolute rounded-xl overflow-hidden ${
-                            caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall'
-                                ? 'inset-4 md:inset-5'
-                                : caseItem.id === 'win-win'
-                                ? 'inset-3 md:inset-4'
-                                : 'inset-2 md:inset-3'
-                        }`}>
+                        /* Контейнер для изображения */
+                        <div className="absolute inset-0 overflow-hidden">
                             <motion.img
                                 src={caseItem.image}
                                 alt={caseItem.client}
                                 className={`${
                                     caseItem.id === 'win-win' || caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall'
                                         ? 'absolute object-contain h-auto top-0 left-0 w-full object-top' 
-                                        : caseItem.id === 'velorra' || caseItem.id === 'rubik' || caseItem.id === 'selfler'
-                                        ? 'absolute inset-0 w-full h-full object-contain'
                                         : 'absolute w-full h-full object-cover inset-0'
                                 }`}
                             onLoad={(e) => {
@@ -262,23 +244,13 @@ export default function CaseCard({
                                         transition: 'transform 12s ease-in-out',
                                         transformOrigin: 'top center'
                                     }
-                                    : caseItem.id === 'velorra' || caseItem.id === 'selfler' || caseItem.id === 'rubik'
-                                    ? {
-                                        // Без прокрутки, просто статичное изображение
-                                        // Изображение ограничено контейнером с overflow-hidden
-                                        // Увеличиваем размер на 10% через scale
-                                        transform: 'scale(1.1)',
-                                        transformOrigin: 'center center',
-                                        objectFit: 'contain',
-                                        objectPosition: 'center'
-                                    }
                                     : {}
                             }
                             animate={
-                                caseItem.id === 'win-win' || caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall' || caseItem.id === 'velorra' || caseItem.id === 'selfler' || caseItem.id === 'rubik'
+                                caseItem.id === 'win-win' || caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall'
                                     ? {} 
                                     : { 
-                                        scale: isHovered ? 1.155 : 1.1,
+                                        scale: isHovered ? 1.05 : 1,
                                         transition: { duration: 0.4, ease: "easeOut" }
                                     }
                             }
@@ -304,13 +276,13 @@ export default function CaseCard({
                 </div>
 
                 {/* Контент */}
-                <div className="p-6 bg-white">
+                <div className="p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl">
                     {/* Теги */}
                     <div className="flex flex-wrap gap-2 mb-3">
                         {caseItem.tags?.slice(0, 3).map(tag => (
                             <span
                                 key={tag}
-                                className="px-2 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600"
+                                className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium text-gray-700"
                             >
                                 {tag}
                             </span>
@@ -324,7 +296,7 @@ export default function CaseCard({
                     </div>
                     
                     <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500 font-mono">{caseItem.service}</p>
+                        <p className="text-xs text-gray-600 font-mono">{caseItem.service}</p>
                         <motion.div
                             whileHover={{ x: 5 }}
                             className="text-brand"

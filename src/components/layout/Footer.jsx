@@ -28,7 +28,7 @@ export default function Footer() {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-white border-t border-gray-200"
+      className="bg-[#E8E8E8] border-t border-gray-200"
     >
       <div className="container mx-auto px-6 md:px-12 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">

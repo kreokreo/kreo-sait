@@ -6,3 +6,8 @@ export const CONTACTS = {
   telegram: 'https://t.me/kreopro',
 };
 
+// Экспорт данных для главной страницы
+export { services } from './services';
+export { testimonials } from './testimonials';
+export { audiences } from './audiences';
+

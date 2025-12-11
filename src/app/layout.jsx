@@ -47,7 +47,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ru" className="">
-      <body className="bg-white text-gray-900 font-sans flex flex-col min-h-screen cursor-none">
+      <body className="bg-[#E8E8E8] text-gray-900 font-sans flex flex-col min-h-screen cursor-none">
         <CustomCursor />
         <Header />
         <Breadcrumbs />

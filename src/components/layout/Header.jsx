@@ -56,6 +56,7 @@ export default function Header() {
                 src="/logo.png"
                 alt="KREO Logo"
                 fill
+                sizes="(max-width: 768px) 80px, 96px"
                 className="object-contain"
                 style={{
                   filter: 'brightness(0) saturate(100%) invert(48%) sepia(100%) saturate(5000%) hue-rotate(190deg) brightness(1.1) contrast(1.2)'
@@ -80,7 +81,7 @@ export default function Header() {
                     "text-sm font-medium transition-colors",
                     isActive 
                       ? "text-black" 
-                      : "text-gray-600 hover:text-black"
+                      : "text-gray-700 hover:text-black"
                   )}
                 >
                   {item.name}
@@ -91,7 +92,7 @@ export default function Header() {
 
           {/* Mobile menu button */}
           <button
-            className="md:hidden p-2 text-gray-600 hover:text-black transition-colors"
+            className="md:hidden p-2 text-gray-700 hover:text-black transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -126,7 +127,7 @@ export default function Header() {
                       "text-base font-medium transition-colors",
                       isActive 
                         ? "text-black" 
-                        : "text-gray-600 hover:text-black"
+                        : "text-gray-700 hover:text-black"
                     )}
                   >
                     {item.name}
