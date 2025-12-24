@@ -12,18 +12,42 @@ export default function LeadForm({ isOpen, onClose }) {
         message: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setSubmitStatus(null);
         
-        // Здесь будет логика отправки формы
-        setTimeout(() => {
-            setIsSubmitting(false);
-            alert('Спасибо! Мы свяжемся с вами в ближайшее время.');
+        try {
+            const response = await fetch('/api/telegram', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка при отправке заявки');
+            }
+
+            setSubmitStatus('success');
             setFormData({ name: '', email: '', phone: '', message: '' });
-            onClose();
-        }, 1000);
+            
+            // Закрываем форму через 2 секунды после успешной отправки
+            setTimeout(() => {
+                onClose();
+                setSubmitStatus(null);
+            }, 2000);
+        } catch (error) {
+            console.error('Ошибка отправки формы:', error);
+            setSubmitStatus('error');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleChange = (e) => {
@@ -152,16 +176,32 @@ export default function LeadForm({ isOpen, onClose }) {
                                     </div>
                                 </div>
 
+                                {/* Сообщение об успехе/ошибке */}
+                                {submitStatus === 'success' && (
+                                    <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm">
+                                        ✅ Спасибо! Мы свяжемся с вами в ближайшее время.
+                                    </div>
+                                )}
+                                {submitStatus === 'error' && (
+                                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+                                        ❌ Произошла ошибка при отправке. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.
+                                    </div>
+                                )}
+
                                 {/* Кнопка отправки */}
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || submitStatus === 'success'}
                                     className="w-full bg-gray-900 text-white py-3 px-6 rounded-full font-medium hover:bg-brand transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isSubmitting ? (
                                         <>
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                             <span>Отправка...</span>
+                                        </>
+                                    ) : submitStatus === 'success' ? (
+                                        <>
+                                            <span>✓ Отправлено</span>
                                         </>
                                     ) : (
                                         <>

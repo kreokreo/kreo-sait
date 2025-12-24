@@ -1,8 +1,9 @@
 // import { Inter, JetBrains_Mono } from 'next/font/google'
-import CustomCursor from '@/components/CustomCursor'
+import Preloader from '@/components/Preloader'
 import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
+import Footer from '@/components/layout/Footer'
+import ClientOnlyCustomCursor from '@/components/ClientOnlyCustomCursor'
 import '@/app/globals.css'
 
 // Temporarily disabled Google Fonts due to network issues
@@ -48,7 +49,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ru" className="">
       <body className="bg-[#E8E8E8] text-gray-900 font-sans flex flex-col min-h-screen cursor-none">
-        <CustomCursor />
+        {/* Прелоадер загружается первым, синхронно */}
+        <Preloader />
+        {/* Клиентский компонент курсора загружается динамически */}
+        <ClientOnlyCustomCursor />
         <Header />
         <Breadcrumbs />
         <main className="flex-grow flex flex-col">

@@ -14,7 +14,7 @@ export default defineConfig({
     port: 5174, // Другой порт, чтобы не конфликтовать с основным проектом
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },

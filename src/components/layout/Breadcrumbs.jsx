@@ -9,6 +9,11 @@ const routeNames = {
   '/uslugi': 'Услуги',
   '/uslugi/reklama': 'Реклама',
   '/uslugi/razrabotka': 'IT-разработка',
+  '/uslugi/sites': 'Сайты',
+  '/uslugi/sites/landing': 'Лендинги',
+  '/uslugi/sites/corporate': 'Корпоративные сайты',
+  '/uslugi/sites/ecommerce': 'Интернет-магазины',
+  '/uslugi/sites/pwa': 'PWA приложения',
   '/kejsy': 'Кейсы',
   '/o-kompanii': 'О компании',
   '/blog': 'Блог',
@@ -17,6 +22,52 @@ const routeNames = {
   '/otzyvy': 'Отзывы',
   '/faq': 'Частые вопросы',
   '/partnerstvo': 'Партнёрство',
+};
+
+// Маппинг для динамических путей услуг
+const serviceNames = {
+  'sites': 'Сайты',
+  'web-apps': 'Веб-приложения',
+  'chatbots': 'Чат-боты',
+  'ai-automation': 'AI-автоматизация',
+  'crm': 'CRM',
+  'integrations': 'Интеграции',
+  'telegram-ads': 'Telegram Ads',
+  'yandex-direct': 'Яндекс.Директ',
+  'seo': 'SEO',
+  'avito': 'Авито реклама',
+  'vk-ads': 'VK Реклама',
+  'google-ads': 'Google Ads',
+};
+
+// Маппинг для типов сайтов
+const siteTypeNames = {
+  'landing': 'Лендинги',
+  'corporate': 'Корпоративные сайты',
+  'ecommerce': 'Интернет-магазины',
+  'pwa': 'PWA приложения',
+};
+
+// Маппинг для направлений бизнеса
+const businessDirectionNames = {
+  // Лендинги
+  'dentistry': 'Для стоматологии',
+  'restaurant': 'Для ресторанов',
+  'ecommerce': 'Для интернет-магазинов',
+  'medical': 'Для медицинских клиник',
+  'education': 'Для образовательных учреждений',
+  'real-estate': 'Для недвижимости',
+  'construction': 'Для строительства',
+  'b2b': 'Для B2B услуг',
+  'entertainment': 'Для развлечений',
+  'automotive': 'Для автомобильного бизнеса',
+  // Корпоративные сайты
+  'medicine': 'Для медицины',
+  'trade': 'Для торговли',
+  // Интернет-магазины
+  'clothing': 'Для одежды',
+  'construction-materials': 'Для стройматериалов',
+  'electronics': 'Для электроники',
 };
 
 export default function Breadcrumbs() {
@@ -30,7 +81,29 @@ export default function Breadcrumbs() {
 
   const breadcrumbs = pathnames.map((value, index) => {
     const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-    const name = routeNames[to] || value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+    
+    // Определяем название для пути
+    let name = routeNames[to];
+    
+    // Если не найдено в routeNames, проверяем специальные случаи
+    if (!name) {
+      // Для путей типа /uslugi/sites/landing/dentistry (направления бизнеса)
+      if (pathnames[0] === 'uslugi' && pathnames[1] === 'sites' && pathnames[2] && pathnames[3]) {
+        name = businessDirectionNames[pathnames[3]] || value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+      }
+      // Для путей типа /uslugi/sites/landing (типы сайтов)
+      else if (pathnames[0] === 'uslugi' && pathnames[1] === 'sites' && pathnames[2]) {
+        name = siteTypeNames[pathnames[2]] || value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+      }
+      // Для путей типа /uslugi/sites
+      else if (pathnames[0] === 'uslugi' && pathnames[1]) {
+        name = serviceNames[pathnames[1]] || value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+      }
+      // Для других случаев - используем значение из пути с заглавной буквы
+      else {
+        name = value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+      }
+    }
 
     return {
       to,

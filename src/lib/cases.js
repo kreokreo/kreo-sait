@@ -3,6 +3,20 @@
 import { allCases } from '@/constants/cases';
 
 /**
+ * Перемешать массив случайным образом (Fisher-Yates shuffle)
+ * @param {Array} array - Массив для перемешивания
+ * @returns {Array} Перемешанный массив
+ */
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+/**
  * Получить кейсы с фильтрацией
  * @param {Object} filters - Объект с фильтрами
  * @param {string} filters.searchQuery - Поисковый запрос
@@ -43,12 +57,15 @@ export function getFilteredCases(filters = {}) {
         return matchesSearch && matchesTags && matchesDirection;
     });
 
+    // Перемешиваем массив для рандомного выбора
+    const shuffled = shuffleArray(filtered);
+
     // Применяем лимит
     if (limit) {
-        filtered = filtered.slice(0, limit);
+        return shuffled.slice(0, limit);
     }
 
-    return filtered;
+    return shuffled;
 }
 
 /**
@@ -78,6 +95,58 @@ export function getRelatedCases(caseId, limit = 3) {
  */
 export function getCaseBySlug(slug) {
     return allCases.find(c => c.slug === slug) || null;
+}
+
+/**
+ * Получить кейсы по услуге
+ * @param {string} serviceId - ID услуги (sites, web-apps, chatbots и т.д.)
+ * @param {number} limit - Максимальное количество кейсов
+ * @returns {Array} Массив кейсов для услуги (рандомно выбранные)
+ */
+export function getCasesByService(serviceId, limit = 3) {
+    // Маппинг услуг на теги и ключевые слова
+    const serviceTags = {
+        'sites': ['Сайт', 'Лендинг', 'Корпоративный', 'Интернет-магазин'],
+        'web-apps': ['Веб-приложение', 'PWA', 'Платформа'],
+        'chatbots': ['Telegram-бот', 'Чат-бот', 'Автоматизация'],
+        'ai-automation': ['AI', 'Автоматизация', 'Искусственный интеллект'],
+        'crm': ['CRM', 'Управление клиентами'],
+        'integrations': ['Интеграции', 'API'],
+        'yandex-direct': ['Яндекс.Директ', 'Контекстная реклама', 'Реклама'],
+        'seo': ['SEO', 'Продвижение'],
+        'telegram-ads': ['Telegram Ads', 'Реклама'],
+        'vk-ads': ['VK Реклама', 'Реклама'],
+        'google-ads': ['Google Ads', 'Реклама'],
+        'avito': ['Авито', 'Реклама']
+    };
+
+    const tags = serviceTags[serviceId] || [];
+    
+    if (tags.length === 0) {
+        return [];
+    }
+
+    // Фильтруем кейсы по тегам или по service
+    const filtered = allCases.filter(caseItem => {
+        // Проверяем теги
+        const matchesTags = tags.some(tag => 
+            caseItem.tags?.some(caseTag => 
+                caseTag.toLowerCase().includes(tag.toLowerCase()) ||
+                tag.toLowerCase().includes(caseTag.toLowerCase())
+            )
+        );
+        
+        // Проверяем service
+        const matchesService = caseItem.service && tags.some(tag =>
+            caseItem.service.toLowerCase().includes(tag.toLowerCase())
+        );
+
+        return matchesTags || matchesService;
+    });
+
+    // Перемешиваем и берем нужное количество
+    const shuffled = shuffleArray(filtered);
+    return shuffled.slice(0, limit);
 }
 
 /**

@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Оптимизация производительности для blur эффектов */
+@layer utilities {
+  .blur-xl {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+  
+  .backdrop-blur-md {
+    will-change: backdrop-filter;
+    transform: translateZ(0);
+  }
+}
+
+/* Анимация для прелоадера */
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 60;
+  }
+  50% {
+    stroke-dashoffset: 200;
+  }
+  100% {
+    stroke-dashoffset: 60;
+  }
+}
+
 /* Spline canvas растягивание на всю область */
 .spline-container {
     pointer-events: none !important;

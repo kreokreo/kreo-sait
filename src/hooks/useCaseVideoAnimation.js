@@ -23,10 +23,27 @@ export function useCaseVideoAnimation(totalCases, hoveredCase) {
             }
 
             if (hoveredCase === i) {
-                // При наведении - проигрываем вперед
+                // При наведении - загружаем и проигрываем видео
                 videoPlayState.current[i] = true;
                 const playForward = () => {
-                    if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+                    // Если видео еще не загружено, загружаем его
+                    if (video.readyState === 0) {
+                        video.load();
+                        video.addEventListener('loadeddata', () => {
+                            video.currentTime = 0;
+                            video.play().catch(() => {});
+                            
+                            // Останавливаем на последнем кадре
+                            const handleTimeUpdate = () => {
+                                if (video.currentTime >= video.duration - 0.05) {
+                                    video.pause();
+                                    video.currentTime = video.duration;
+                                    video.removeEventListener('timeupdate', handleTimeUpdate);
+                                }
+                            };
+                            video.addEventListener('timeupdate', handleTimeUpdate);
+                        }, { once: true });
+                    } else if (video.readyState >= 2) { // HAVE_CURRENT_DATA
                         video.currentTime = 0;
                         video.play().catch(() => {});
                         
@@ -92,9 +109,12 @@ export function useCaseVideoAnimation(totalCases, hoveredCase) {
                     };
                     checkAndReverse();
                 } else {
-                    // Видео не проигрывалось, просто устанавливаем на начало
+                    // Видео не проигрывалось, просто устанавливаем на начало и останавливаем
                     video.pause();
                     if (video.readyState >= 2) {
+                        video.currentTime = 0;
+                    } else if (video.readyState >= 1) {
+                        // Если метаданные загружены, устанавливаем первый кадр
                         video.currentTime = 0;
                     }
                 }

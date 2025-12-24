@@ -4,37 +4,41 @@ import { useEffect, useRef, useState } from 'react'
 
 export default function SplineViewer({ url, mobileUrl }) {
   const containerRef = useRef(null)
-  const [isMobile, setIsMobile] = useState(false)
+  // Определяем устройство сразу при инициализации, до первого рендера
+  const [isMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth < 768
+  })
   const [isReady, setIsReady] = useState(false)
   const [mounted, setMounted] = useState(false)
+
+  // Выбираем URL в зависимости от устройства (определяется один раз при инициализации)
+  const sceneUrl = (isMobile && mobileUrl) ? mobileUrl : url
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   useEffect(() => {
-    if (!mounted) return
-    
-    // Определяем, мобильное ли устройство
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [mounted])
-
-  useEffect(() => {
-    // Загружаем скрипт spline-viewer только на клиенте
+    // Загружаем скрипт spline-viewer только на клиенте с задержкой для оптимизации
     if (typeof window !== 'undefined' && !window.splineViewerLoaded) {
-      const script = document.createElement('script')
-      script.type = 'module'
-      script.src = 'https://unpkg.com/@splinetool/viewer@1.12.6/build/spline-viewer.js'
-      script.async = true
-      document.head.appendChild(script)
-      window.splineViewerLoaded = true
+      // Небольшая задержка, чтобы не блокировать первоначальный рендеринг
+      const loadScript = () => {
+        const script = document.createElement('script')
+        script.type = 'module'
+        script.src = 'https://unpkg.com/@splinetool/viewer@1.12.6/build/spline-viewer.js'
+        script.async = true
+        script.defer = true
+        document.head.appendChild(script)
+        window.splineViewerLoaded = true
+      }
+      
+      // Загружаем скрипт после того, как основной контент отрендерится
+      if (document.readyState === 'complete') {
+        setTimeout(loadScript, 100)
+      } else {
+        window.addEventListener('load', () => setTimeout(loadScript, 100), { once: true })
+      }
     }
 
     // Подавляем ошибки WebGL от Spline (они не критичны)
@@ -79,6 +83,7 @@ export default function SplineViewer({ url, mobileUrl }) {
     // Ждем, пока контейнер получит размеры перед рендерингом Spline
     if (containerRef.current) {
       const checkSize = () => {
+        if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect()
         if (rect.width > 0 && rect.height > 0) {
           setIsReady(true)
@@ -98,12 +103,11 @@ export default function SplineViewer({ url, mobileUrl }) {
       
       return () => {
         resizeObserver.disconnect()
+        // Убеждаемся, что при размонтировании старый Spline удаляется
+        setIsReady(false)
       }
     }
-  }, [mounted])
-
-  // Выбираем URL в зависимости от устройства (только после монтирования)
-  const sceneUrl = mounted && (isMobile && mobileUrl) ? mobileUrl : url
+  }, [mounted, sceneUrl]) // Добавляем sceneUrl в зависимости, чтобы пересоздать при смене URL
 
   // Не рендерим ничего до монтирования, чтобы избежать двойной загрузки
   if (!mounted) {
@@ -130,16 +134,16 @@ export default function SplineViewer({ url, mobileUrl }) {
         minHeight: '1px',
       }}
     >
-      {isReady && (
-      <spline-viewer 
-          key={sceneUrl}
+      {isReady && sceneUrl && (
+        <spline-viewer 
+          key={`spline-${isMobile ? 'mobile' : 'desktop'}-${sceneUrl}`} // Уникальный key для каждого устройства
           url={sceneUrl}
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block',
-        }}
-      />
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'block',
+          }}
+        />
       )}
     </div>
   )

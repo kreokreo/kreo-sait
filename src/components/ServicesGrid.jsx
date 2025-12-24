@@ -1,16 +1,19 @@
 'use client'
 
 import { motion } from 'framer-motion';
-import { Code, Globe, Bot, Zap, Settings, Link2, TrendingUp, Search, Megaphone, MessageSquare, ShoppingCart } from 'lucide-react';
+import { Code, Globe, Bot, Zap, Settings, Link2, TrendingUp, Search, Megaphone, MessageSquare, ShoppingCart, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 /**
  * Компонент сетки услуг в минималистичном стиле
  * @param {Array} services - Массив услуг
  * @param {string} title - Заголовок блока
+ * @param {boolean} showAllServicesButton - Показывать ли кнопку "Все услуги"
  */
 export default function ServicesGrid({ 
     services = [], 
-    title = 'НАШИ УСЛУГИ'
+    title = 'НАШИ УСЛУГИ',
+    showAllServicesButton = false
 }) {
 
     return (
@@ -45,50 +48,29 @@ export default function ServicesGrid({
             <div className="w-full px-12 md:px-16 lg:px-24">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3 auto-rows-fr">
                     {services.map((service, index) => {
-                        // Определяем размеры для разных элементов
-                        // Некоторые занимают 2 колонки по ширине, некоторые 2 строки по высоте
-                        const getGridClasses = (idx) => {
-                            // Элемент 0 (Сайты) - занимает 2 строки по высоте
-                            if (idx === 0) return 'md:row-span-2';
+                        // Определяем размеры для разных элементов по ID услуги
+                        const getGridClasses = (serviceId, idx) => {
+                            // Сайты - 2 блока по ширине (на md и lg экранах)
+                            if (serviceId === 'sites') return 'md:col-span-2 lg:col-span-2';
                             
-                            // Элементы 1-2 - обычные
-                            if (idx < 3) return '';
+                            // AI-автоматизация - 1 блок (обычный)
+                            if (serviceId === 'ai-automation') return '';
                             
-                            // Элемент 3 - занимает 2 колонки
-                            if (idx === 3) return 'md:col-span-2';
+                            // SEO - 1 блок (обычный)
+                            if (serviceId === 'seo') return '';
                             
-                            // Элемент 4 - обычный
-                            if (idx === 4) return '';
-                            
-                            // Элемент 5 (Интеграции) - обычный
-                            if (idx === 5) return '';
-                            
-                            // Элемент 6 (Telegram Ads) - обычный
-                            if (idx === 6) return '';
-                            
-                            // Элемент 7 (Яндекс.Директ) - занимает 2 колонки
-                            if (idx === 7) return 'md:col-span-2';
-                            
-                            // Элемент 8 (SEO) - обычный
-                            if (idx === 8) return '';
-                            
-                            // Элемент 9 (Авито) - обычный
-                            if (idx === 9) return '';
+                            // Яндекс.Директ - 2 блока по ширине (на md и lg экранах)
+                            if (serviceId === 'yandex-direct') return 'md:col-span-2 lg:col-span-2';
                             
                             // Остальные - обычные
                             return '';
                         };
 
-                        return (
-                            <motion.div
-                                key={service.id || index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.05, duration: 0.5 }}
-                                whileHover={{ y: -2 }}
-                                className={`group relative p-8 md:p-10 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:border-brand/30 hover:bg-white transition-all duration-300 ${getGridClasses(index)}`}
-                            >
+                        // Определяем, есть ли страница для этой услуги
+                        const hasPage = service.id === 'sites'; // Пока только для сайтов
+
+                        const cardContent = (
+                            <>
                                 {/* Иконка - в правом нижнем углу */}
                                 <div className="absolute bottom-4 right-4 text-gray-900 opacity-60">
                                     {service.icon && (
@@ -107,9 +89,73 @@ export default function ServicesGrid({
                                         {service.description}
                                     </p>
                                 )}
+                            </>
+                        );
+
+                        const motionProps = {
+                            initial: { opacity: 0, y: 20 },
+                            whileInView: { opacity: 1, y: 0 },
+                            viewport: { once: true },
+                            transition: { delay: index * 0.05, duration: 0.5 },
+                            whileHover: { y: -2 }
+                        };
+
+                        const gridClasses = getGridClasses(service.id, index);
+                        
+                        return hasPage ? (
+                            <motion.div
+                                key={service.id || index}
+                                {...motionProps}
+                                className={gridClasses}
+                            >
+                                <Link
+                                    href={`/uslugi/${service.id}`}
+                                    className="group relative block p-8 md:p-10 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:border-brand/30 hover:bg-white transition-all duration-300 h-full"
+                                >
+                                    {cardContent}
+                                </Link>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key={service.id || index}
+                                {...motionProps}
+                                className={`group relative p-8 md:p-10 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:border-brand/30 hover:bg-white transition-all duration-300 ${gridClasses}`}
+                            >
+                                {cardContent}
                             </motion.div>
                         );
                     })}
+                    
+                    {/* Кнопка "Все услуги" - интегрирована в сетку в правом нижнем углу */}
+                    {showAllServicesButton && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: services.length * 0.05, duration: 0.5 }}
+                            whileHover={{ y: -2 }}
+                        >
+                            <Link
+                                href="/uslugi"
+                                className="group relative block p-8 md:p-10 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md hover:border-brand/30 hover:bg-white transition-all duration-300 h-full"
+                            >
+                                {/* Иконка - в правом нижнем углу */}
+                                <div className="absolute bottom-4 right-4 text-gray-900 opacity-60">
+                                    <ArrowRight className="w-6 h-6 md:w-8 md:h-8" strokeWidth={1.5} />
+                                </div>
+                                
+                                {/* Название */}
+                                <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 group-hover:text-brand transition-colors pr-12">
+                                    Все услуги
+                                </h3>
+                                
+                                {/* Описание */}
+                                <p className="text-sm text-gray-700 leading-relaxed pr-12">
+                                    Посмотреть полный список наших услуг
+                                </p>
+                            </Link>
+                        </motion.div>
+                    )}
                 </div>
             </div>
         </section>

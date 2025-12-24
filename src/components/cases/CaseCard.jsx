@@ -171,7 +171,9 @@ export default function CaseCard({
                         caseItem.id === 'win-win' || caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall' || caseItem.id === 'velorra' || caseItem.id === 'rubik' || caseItem.id === 'selfler' ? 'bg-white/10' : ''
                     }`}
                 >
+                    {/* Для кейсов с видео показываем первый кадр видео как превью, иначе изображение */}
                     {showVideo && caseItem.animation ? (
+                        /* Видео с первым кадром как превью */
                         <video
                             ref={videoRefCallback}
                             src={caseItem.animation}
@@ -182,9 +184,24 @@ export default function CaseCard({
                             muted
                             playsInline
                             preload="metadata"
+                            loading="lazy"
+                            onLoadedMetadata={(e) => {
+                                // Устанавливаем первый кадр как превью и останавливаем видео
+                                const video = e.target;
+                                video.currentTime = 0;
+                                video.pause();
+                            }}
+                            onLoadedData={(e) => {
+                                // Дополнительно убеждаемся, что первый кадр установлен
+                                const video = e.target;
+                                if (video.currentTime !== 0) {
+                                    video.currentTime = 0;
+                                }
+                                video.pause();
+                            }}
                         />
                     ) : (
-                        /* Контейнер для изображения */
+                        /* Изображение для кейсов без видео */
                         <div className="absolute inset-0 overflow-hidden">
                             <motion.img
                                 src={caseItem.image}
@@ -194,7 +211,7 @@ export default function CaseCard({
                                         ? 'absolute object-contain h-auto top-0 left-0 w-full object-top' 
                                         : 'absolute w-full h-full object-cover inset-0'
                                 }`}
-                            onLoad={(e) => {
+                                onLoad={(e) => {
                                 if (caseItem.id === 'win-win' || caseItem.id === 'dental-deal-clinic' || caseItem.id === 'prodljonka' || caseItem.id === 'marshal-grand-hall') {
                                     setTimeout(() => {
                                         const img = e.target;

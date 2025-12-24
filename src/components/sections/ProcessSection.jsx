@@ -27,11 +27,11 @@ export default function ProcessSection({ onOpenLeadForm }) {
     ];
 
     return (
-        <section className="relative z-10 w-full py-20 md:py-32 bg-transparent overflow-hidden">
+        <section className="relative z-10 w-full pt-20 md:pt-32 pb-0 bg-transparent" style={{ overflow: 'visible' }}>
             {/* Размытые декоративные круги для эффекта стекла */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-20 left-10 w-[400px] h-[400px] bg-blue-400/20 rounded-full blur-xl"></div>
-                <div className="absolute bottom-20 right-20 w-[350px] h-[350px] bg-cyan-400/20 rounded-full blur-xl"></div>
+            <div className="absolute inset-0 pointer-events-none" style={{ overflow: 'visible', left: '-200px', right: '-200px', top: '-100px', bottom: '-100px' }}>
+                <div className="absolute top-20 left-[calc(10px+200px)] w-[400px] h-[400px] bg-blue-400/20 rounded-full blur-xl"></div>
+                <div className="absolute bottom-20 right-[calc(20px+200px)] w-[350px] h-[350px] bg-cyan-400/20 rounded-full blur-xl"></div>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-indigo-400/15 rounded-full blur-xl"></div>
             </div>
 

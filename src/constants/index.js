@@ -3,7 +3,7 @@
 // Контакты
 export const CONTACTS = {
   email: 'info@kreo.pro',
-  telegram: 'https://t.me/kreopro',
+  telegram: 'https://t.me/KREO_IT',
 };
 
 // Экспорт данных для главной страницы

@@ -8,17 +8,36 @@ import { createPortal } from 'react-dom';
 /**
  * Компонент для видео/фото отзыва
  * @param {Object} item - Объект отзыва { type: 'video' | 'image', src: string }
+ * @param {number} width - Фиксированная ширина элемента в пикселях
  */
-export default function TestimonialItem({ item }) {
+export default function TestimonialItem({ item, width }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [isImageExpanded, setIsImageExpanded] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
     const videoRef = useRef(null);
     
     // Проверка монтирования для Portal
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Загружаем превью (первый кадр) для видео - только метаданные
+    useEffect(() => {
+        if (item.type === 'video' && videoRef.current && !shouldLoadVideo) {
+            const video = videoRef.current;
+            const handleLoadedMetadata = () => {
+                // Устанавливаем на первый кадр для превью
+                video.currentTime = 0.1;
+            };
+            
+            video.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+            
+            return () => {
+                video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            };
+        }
+    }, [item.type, item.src, shouldLoadVideo]);
     
     // Закрытие по Escape и блокировка скролла
     useEffect(() => {
@@ -44,36 +63,63 @@ export default function TestimonialItem({ item }) {
     return (
         <>
             <div
-                className="flex-shrink-0 w-1/2 md:w-1/3 lg:w-1/5 group cursor-pointer"
+                className={`flex-shrink-0 group cursor-pointer ${!width ? 'w-1/2 md:w-1/3 lg:w-1/5' : ''}`}
+                style={width ? { width: `${width}px` } : undefined}
                 onClick={() => {
                     if (item.type === 'video' && videoRef.current) {
-                        if (isPlaying) {
-                            videoRef.current.pause();
-                            setIsPlaying(false);
+                        // Загружаем видео полностью только при первом клике
+                        if (!shouldLoadVideo) {
+                            setShouldLoadVideo(true);
+                            // Перезагружаем видео с полной загрузкой
+                            videoRef.current.load();
+                            // Небольшая задержка для загрузки перед воспроизведением
+                            setTimeout(() => {
+                                if (videoRef.current) {
+                                    videoRef.current.play().catch(() => {
+                                        // Игнорируем ошибки автовоспроизведения
+                                    });
+                                    setIsPlaying(true);
+                                }
+                            }, 200);
                         } else {
-                            videoRef.current.play();
-                            setIsPlaying(true);
+                            // Переключаем воспроизведение/паузу
+                            if (isPlaying) {
+                                videoRef.current.pause();
+                                setIsPlaying(false);
+                            } else {
+                                videoRef.current.play();
+                                setIsPlaying(true);
+                            }
                         }
                     } else if (item.type === 'image') {
                         setIsImageExpanded(true);
                     }
                 }}
             >
-                {/* Видео/Фото-кружок */}
-                <div className="relative aspect-square rounded-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-gray-200 group-hover:border-brand/50 transition-all mx-auto" style={{ maxWidth: '280px' }}>
+                {/* Видео/Фото-кружок в стеклянном контейнере */}
+                <div className="relative aspect-square rounded-full overflow-hidden bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm border-2 border-white/30 group-hover:border-brand/50 group-hover:bg-white/30 transition-all mx-auto shadow-lg group-hover:shadow-xl" style={{ maxWidth: '280px' }}>
                     {item.type === 'video' ? (
                         <>
+                            {/* Видео элемент - показывает первый кадр как превью, загружается полностью при клике */}
                             <video
                                 ref={videoRef}
-                                className="w-full h-full object-cover"
+                                className="absolute inset-0 w-full h-full object-cover"
                                 src={item.src}
-                                loop
+                                loop={shouldLoadVideo}
                                 playsInline
-                                preload="metadata"
+                                muted
+                                preload={shouldLoadVideo ? "auto" : "metadata"}
+                                onLoadedMetadata={() => {
+                                    // Устанавливаем на первый кадр для превью
+                                    if (!shouldLoadVideo && videoRef.current) {
+                                        videoRef.current.currentTime = 0.1;
+                                    }
+                                }}
                             />
-                            {/* Иконка Play */}
+                            
+                            {/* Иконка Play - показываем если видео не играет */}
                             {!isPlaying && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-all">
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-all z-10">
                                     <Play className="w-8 h-8 md:w-12 md:h-12 text-white/90 group-hover:text-brand transition-colors" />
                                 </div>
                             )}

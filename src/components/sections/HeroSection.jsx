@@ -3,10 +3,10 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
-import { Suspense, useRef } from 'react';
+import { Suspense, useRef, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-// Динамическая загрузка Spline Viewer с отключением SSR
+// Динамическая загрузка Spline Viewer с отключением SSR и задержкой
 const SplineViewer = dynamic(
     () => import('@/components/SplineViewer'),
     { 
@@ -21,20 +21,58 @@ const SplineViewer = dynamic(
  * @param {Object} splineBlockRef - Ref для блока Spline
  */
 export default function HeroSection({ onOpenLeadForm, splineBlockRef }) {
+    const [shouldLoadSpline, setShouldLoadSpline] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        // Определяем мобильное устройство
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        
+        // Проверяем сразу
+        checkMobile();
+        
+        // Слушаем изменения размера окна
+        window.addEventListener('resize', checkMobile);
+        
+        return () => {
+            window.removeEventListener('resize', checkMobile);
+        };
+    }, []);
+
+    useEffect(() => {
+        // Загружаем Spline только на десктопе
+        if (isMobile) {
+            return;
+        }
+        
+        // Загружаем Spline сразу при монтировании компонента, параллельно с прелоадером
+        // Используем requestAnimationFrame для небольшой задержки, чтобы не блокировать первоначальный рендер
+        requestAnimationFrame(() => {
+            // Еще один кадр для гарантии, что прелоадер уже начал рендериться
+            requestAnimationFrame(() => {
+                setShouldLoadSpline(true);
+            });
+        });
+    }, [isMobile]);
+
     return (
         <section 
             ref={splineBlockRef}
             className="relative w-full h-screen overflow-hidden"
         >
-            {/* Spline внутри Hero-блока - прокручивается вместе со страницей */}
-            <Suspense fallback={null}>
-                <div className="absolute inset-0 z-0">
-                    <SplineViewer 
-                        url="https://prod.spline.design/z86pV7BXa2dCQKsp/scene.splinecode"
-                        mobileUrl="https://prod.spline.design/kWSSBGwPnjzwpyix/scene.splinecode"
-                    />
-                </div>
-            </Suspense>
+            {/* Spline внутри Hero-блока - загружается с задержкой, только на десктопе */}
+            {shouldLoadSpline && !isMobile && (
+                <Suspense fallback={null}>
+                    <div className="absolute inset-0 z-0 hidden md:block">
+                        <SplineViewer 
+                            url="https://prod.spline.design/z86pV7BXa2dCQKsp/scene.splinecode"
+                            mobileUrl="https://prod.spline.design/kWSSBGwPnjzwpyix/scene.splinecode"
+                        />
+                    </div>
+                </Suspense>
+            )}
 
             {/* Контейнер с контентом */}
             <div className="relative z-10 h-full">
