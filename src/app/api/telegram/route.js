@@ -18,8 +18,30 @@ export async function POST(request) {
         }
 
         // Получаем токен бота и chat_id из переменных окружения
-        const botToken = process.env.TELEGRAM_BOT_TOKEN;
-        const chatId = process.env.TELEGRAM_CHAT_ID;
+        // В standalone режиме Next.js может не загружать .env.local автоматически
+        // Поэтому пробуем несколько способов
+        let botToken = process.env.TELEGRAM_BOT_TOKEN;
+        let chatId = process.env.TELEGRAM_CHAT_ID;
+        
+        // Если переменные не найдены, пробуем загрузить из .env.local вручную
+        if (!botToken || !chatId) {
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const envPath = path.join(process.cwd(), '.env.local');
+                if (fs.existsSync(envPath)) {
+                    const envContent = fs.readFileSync(envPath, 'utf8');
+                    envContent.split('\n').forEach(line => {
+                        const match = line.match(/^TELEGRAM_BOT_TOKEN=(.+)$/);
+                        if (match) botToken = match[1].trim();
+                        const match2 = line.match(/^TELEGRAM_CHAT_ID=(.+)$/);
+                        if (match2) chatId = match2[1].trim();
+                    });
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки .env.local:', e);
+            }
+        }
 
         if (!botToken || !chatId) {
             console.error('TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не настроены');
